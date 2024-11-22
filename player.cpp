@@ -16,7 +16,7 @@
 #define BUFFER_SIZE 128
 
 
-
+// Função para inicializar o socket
 int init_socket(const char *hostname, struct addrinfo *&infoaddr){
     int fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd_udp < 0) {
@@ -39,7 +39,7 @@ int init_socket(const char *hostname, struct addrinfo *&infoaddr){
     return fd_udp; 
 }
 
-
+// Função para enviar mensagem???????????????????????????????
 int send_socket_udp(int fd_udp, const char *message, struct addrinfo *infoaddr)
 {
     ssize_t n = sendto(fd_udp, message, strlen(message), 0, infoaddr->ai_addr, infoaddr->ai_addrlen);
@@ -50,7 +50,7 @@ int send_socket_udp(int fd_udp, const char *message, struct addrinfo *infoaddr)
     return 0; 
 }
 
-
+// Função para receber mensagem
 int receive_socket_udp(int fd_udp, char *buffer, size_t buffer_size)
 {
     sockaddr_in addr;
@@ -66,65 +66,98 @@ int receive_socket_udp(int fd_udp, char *buffer, size_t buffer_size)
     return n;         // Retorna o número de bytes recebidos
 }
 
-
-int get_msg(char *msgbuffer)
-{
+//funcao para ler do terminal
+int get_msg(char *msgbuffer) {
     char c;
     int i = 0;
-    while (c = getchar()!= EOF || c != '\n' || i < 128) {
-        if (c == '\n') {
+    while ((c = getchar())!= EOF || c != '\n' || i < 128) {
+        if(c =='\n'){
             break;
         }
         msgbuffer[i] = c;
         i++;
     }
-    msgbuffer[i] = '\0';
+    msgbuffer[i] = '\0';    
     return 0;
 }
 
-// int parser(char *msgbuffer, char *sendbuffer)
-// {
-//     char currword[128];
-//     int i = 0;
-//     char c;    
-// }
+
+/*void switch_case(const char *buffer) {
+    int i=0;
+    char c;
+    size_t len = strlen(buffer);          
+    switch (c = buffer[i])
+    {
+    case //c seja um numero e len_buff < 10 (caso normal) :
+        // code 
+        break;
+    case //c seja uma letra espaco letra :
+        // code 
+        break;
+    case //c0 seja s e c1 seja t ou palavra show_trials :
+        // code 
+        break;
+    case //c0 seja s e c1 seja b ou palavra scoreboard:
+        // code 
+        break;
+    case //quit:
+        // code 
+        break;
+    case //exit:
+        // code 
+        break;
+    case //c seja um numero e len_buff < 10 (caso normal):
+        // code 
+        break;
+
+    default:
+        break;
+    }
+}*/
+
 
 int main() {
     struct addrinfo *infoaddr = nullptr; // Ponteiro para guardar informações do endereço
     char buffer[BUFFER_SIZE];
-    char msgbuffer[BUFFER_SIZE];
-    char sendmsg[BUFFER_SIZE];
+    //char msgbuffer[BUFFER_SIZE];
+    char sendmsg[BUFFER_SIZE];  
 
-    //inicializa os diretorios
-    void create_directories();
-    
     // Inicializa o socket
     int fd_udp = init_socket("localhost", infoaddr);
     if (fd_udp < 0) {
         return 1;
     }
+   
+   //loop para durante o jogo                                                     
+    while (1) {
+        if (get_msg(sendmsg) != 0)  {
+            perror("Erro ao ler a mensagem");
+            return -1;
+        } 
 
-    //Descobre mensagem
+        printf("%s", "a");
+        // Envia mensagem
+        if (send_socket_udp(fd_udp, sendmsg , infoaddr) < 0)   {
+            freeaddrinfo(infoaddr);
+            close(fd_udp);
+            return 1;
+        }
+
+        // Recebe mensagem
+        int n = receive_socket_udp(fd_udp, buffer, BUFFER_SIZE);
+        if (n < 0)  {
+            freeaddrinfo(infoaddr);
+            close(fd_udp);
+            return 1;
+        }
+        // Imprime a mensagem recebida
+        write(1, "echo: ", 6);
+        write(1, buffer, n);
+        write(1, "\n", 1);
+
+    }   
     
-
-    // Envia mensagem
-    if (send_socket_udp(fd_udp, "UAU\n" , infoaddr) < 0)   {
-        freeaddrinfo(infoaddr);
-        close(fd_udp);
-        return 1;
-    }
-
-    // Recebe mensagem
-    int n = receive_socket_udp(fd_udp, buffer, BUFFER_SIZE);
-    if (n < 0)  {
-        freeaddrinfo(infoaddr);
-        close(fd_udp);
-        return 1;
-    }
-
-    // Imprime a mensagem recebida
-    write(1, "echo: ", 6);
-    write(1, buffer, n);
+    
 
     // Limpeza
     freeaddrinfo(infoaddr);

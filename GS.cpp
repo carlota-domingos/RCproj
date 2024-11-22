@@ -11,6 +11,9 @@
 #include <unistd.h>
 #define PORT "58001"
 #define BUFFER_SIZE 128
+#define NUM_COLORS 4
+
+
 
 //funcao de criar diretoria
 void create_directories() {
@@ -73,19 +76,30 @@ int send_message(int fd_udp, const char* buffer, size_t length, struct sockaddr_
     return 0; // Sucesso
 }
 
+//gera o codigo de coderes para o jogo
+void generate_random_colors(char *result) {
+    char colors[] = {'R', 'G', 'B', 'Y', 'O', 'P'};
+    size_t num_available_colors = sizeof(colors) / sizeof(colors[0]);
+
+    for (int i = 0; i < NUM_COLORS; i++) {
+        int random_index = rand() % num_available_colors; // Escolhe um índice aleatório
+        result[i] = colors[random_index];                // Adiciona a cor à sequência
+    }
+    result[NUM_COLORS] = '\0'; // Adiciona o terminador nulo para tornar a string válida
+}
+
 // Função principal
 int main() {
     struct addrinfo* infoaddr = nullptr;
     struct sockaddr_in addr{};
     char buffer[BUFFER_SIZE];
     socklen_t addrlen_udp = sizeof(addr);
-
     create_directories();
 
     // Inicializa o socket
     int fd_udp = init_socket(infoaddr);
     if (fd_udp < 0) {
-        return 1; // Erro ao inicializar o socket
+        return 1;
     }
 
     // Vincula o socket ao endereço
@@ -95,7 +109,10 @@ int main() {
         return 1;
     }
 
-    // Loop de recepção e envio de mensagens
+    //colocar aqui especial ler a 1a msgm e iniciar o jogo
+    
+    
+    // Loop de recepção e envio de mensagens durante o jogo apenas
     while (1) {
         ssize_t n = receive_message(fd_udp, buffer, BUFFER_SIZE, addr, addrlen_udp);
         if (n == -1) {
@@ -106,9 +123,11 @@ int main() {
 
         write(1, "received: ", 10);
         write(1, buffer, n);
+        write(1, "\n", 1);
+
 
         // Envia a mensagem de volta para o endereço de onde foi recebida
-        if (send_message(fd_udp, buffer, n, addr, addrlen_udp) < 0) {
+        if (send_message(fd_udp, "tudo certo", n, addr, addrlen_udp) < 0) {
             freeaddrinfo(infoaddr);
             close(fd_udp);
             return 1; // Erro ao enviar mensagem
