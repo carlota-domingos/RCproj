@@ -15,6 +15,16 @@
 #define PORT "58001"
 #define BUFFER_SIZE 128
 
+//ve se é um int 
+int is_number(const char *buffer) {
+    size_t len = strlen(buffer);
+    for (size_t i = 0; i < len; i++) {
+        if (!isdigit(buffer[i])) {
+            return 0; // Não é um número
+        }
+    }
+    return 1; // É um número
+}
 
 // Função para inicializar o socket
 int init_socket(const char *hostname, struct addrinfo *&infoaddr){
@@ -67,7 +77,7 @@ int receive_socket_udp(int fd_udp, char *buffer, size_t buffer_size)
 }
 
 //funcao para ler do terminal
-int get_msg(char *msgbuffer) {
+int get_msg(char *msgbuffer, int fd_udp, addrinfo *infoaddr) {
     char c;
     int i = 0;
     while ((c = getchar())!= EOF || c != '\n' || i < 128) {
@@ -77,20 +87,24 @@ int get_msg(char *msgbuffer) {
         msgbuffer[i] = c;
         i++;
     }
-    msgbuffer[i] = '\0';    
+    msgbuffer[i] = '\0';  
+    switch_case(msgbuffer, fd_udp, infoaddr);
     return 0;
 }
 
-
-/*void switch_case(const char *buffer) {
+/*
+int switch_case(const char *buffer, int fd_udp, addrinfo *infoaddr) {
     int i=0;
     char c;
     size_t len = strlen(buffer);          
-    switch (c = buffer[i])
-    {
-    case //c seja um numero e len_buff < 10 (caso normal) :
-        // code 
-        break;
+    switch (buffer) {
+        case len <= 10 && is_number(buffer[i])==1 :
+            if (send_socket_udp(fd_udp, buffer , infoaddr) < 0)   {
+                freeaddrinfo(infoaddr);
+                close(fd_udp);
+                return 1;
+            }
+            break;
     case //c seja uma letra espaco letra :
         // code 
         break;
@@ -111,9 +125,9 @@ int get_msg(char *msgbuffer) {
         break;
 
     default:
-        break;
+        break;*/
     }
-}*/
+}
 
 
 int main() {
@@ -130,7 +144,7 @@ int main() {
    
    //loop para durante o jogo                                                     
     while (1) {
-        if (get_msg(sendmsg) != 0)  {
+        if (get_msg(sendmsg, fd_udp, infoaddr) != 0)  {
             perror("Erro ao ler a mensagem");
             return -1;
         } 
@@ -154,6 +168,9 @@ int main() {
         write(1, "echo: ", 6);
         write(1, buffer, n);
         write(1, "\n", 1);
+
+        memset(buffer, 0, n);
+
 
     }   
     

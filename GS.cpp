@@ -88,6 +88,41 @@ void generate_random_colors(char *result) {
     result[NUM_COLORS] = '\0'; // Adiciona o terminador nulo para tornar a string válida
 }
 
+
+/*void switch_case(const char *buffer) {
+    int i=0;
+    char c;
+    size_t len = strlen(buffer);          
+    switch (c = buffer[i])
+    {
+    case //c seja um numero e len_buff < 10 (caso normal) :
+        // code 
+        break;
+    case //c seja uma letra espaco letra :
+        // code 
+        break;
+    case //c0 seja s e c1 seja t ou palavra show_trials :
+        // code 
+        break;
+    case //c0 seja s e c1 seja b ou palavra scoreboard:
+        // code 
+        break;
+    case //quit:
+        // code 
+        break;
+    case //exit:
+        // code 
+        break;
+    case //c seja um numero e len_buff < 10 (caso normal):
+        // code 
+        break;
+
+    default:
+        break;
+    }
+}*/
+
+
 // Função principal
 int main() {
     struct addrinfo* infoaddr = nullptr;
@@ -110,7 +145,7 @@ int main() {
     }
 
     //colocar aqui especial ler a 1a msgm e iniciar o jogo
-    
+
     
     // Loop de recepção e envio de mensagens durante o jogo apenas
     while (1) {
@@ -124,10 +159,10 @@ int main() {
         write(1, "received: ", 10);
         write(1, buffer, n);
         write(1, "\n", 1);
-
+        
 
         // Envia a mensagem de volta para o endereço de onde foi recebida
-        if (send_message(fd_udp, "tudo certo", n, addr, addrlen_udp) < 0) {
+        if (send_message(fd_udp, "ok", n, addr, addrlen_udp) < 0) {
             freeaddrinfo(infoaddr);
             close(fd_udp);
             return 1; // Erro ao enviar mensagem
