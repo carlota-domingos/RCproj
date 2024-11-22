@@ -1,5 +1,7 @@
+#include namespace std
 #include <unistd.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -77,7 +79,7 @@ int receive_socket_udp(int fd_udp, char *buffer, size_t buffer_size)
 }
 
 //funcao para ler do terminal
-int get_msg(char *msgbuffer, int fd_udp, addrinfo *infoaddr) {
+int get_msg(char *msgbuffer) {
     char c;
     int i = 0;
     while ((c = getchar())!= EOF || c != '\n' || i < 128) {
@@ -88,12 +90,49 @@ int get_msg(char *msgbuffer, int fd_udp, addrinfo *infoaddr) {
         i++;
     }
     msgbuffer[i] = '\0';  
-    switch_case(msgbuffer, fd_udp, infoaddr);
+    //case(msgbuffer);
     return 0;
 }
 
-/*
-int switch_case(const char *buffer, int fd_udp, addrinfo *infoaddr) {
+
+int case(char * buffer){
+    size_t len
+
+
+        if ((buffer.compare("sb"))==0 || (buffer.compare("scoreboard"))==0) {
+            /* pasta score TCP */
+            return 0;
+        }
+        else if ((buffer.compare("st"))==0 || (buffer.compare("show_trials"))==0) {
+            /* pasta games TCP */
+            return 1;
+        }
+        else if ((buffer.compare("quit"))==0 ) {
+            /* QUIT */
+            return 2;
+        }
+        else if ((buffer.compare("exit"))==0 ) {
+            /* EXIT */
+            return 3;
+        }
+        else if ((buffer.compare("exit"))==0 ) {
+            /* EXIT */
+            return 4;
+        }
+        else if ((buffer.substr(0,3).compare("try "))==0 ) {
+            return 5;
+        }
+        else if (buffer.substr(0,5).compare("debug ")){
+            return 6;
+        } 
+        else if (buffer.substr(0,5).compare("start ")){
+            return 7;
+        }
+    return -1;  
+} 
+
+
+/*int switch_case(int case, int fd_udp, addrinfo *infoaddr) {
     int i=0;
     char c;
     size_t len = strlen(buffer);          
@@ -125,9 +164,9 @@ int switch_case(const char *buffer, int fd_udp, addrinfo *infoaddr) {
         break;
 
     default:
-        break;*/
+        break;
     }
-}
+}*/
 
 
 int main() {
@@ -144,7 +183,7 @@ int main() {
    
    //loop para durante o jogo                                                     
     while (1) {
-        if (get_msg(sendmsg, fd_udp, infoaddr) != 0)  {
+        if (get_msg(sendmsg) != 0)  {
             perror("Erro ao ler a mensagem");
             return -1;
         } 

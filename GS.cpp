@@ -162,7 +162,7 @@ int main() {
         
 
         // Envia a mensagem de volta para o endereço de onde foi recebida
-        if (send_message(fd_udp, "ok", n, addr, addrlen_udp) < 0) {
+        if (send_message(fd_udp, "tudo tudo ok", 12, addr, addrlen_udp) < 0) {
             freeaddrinfo(infoaddr);
             close(fd_udp);
             return 1; // Erro ao enviar mensagem
