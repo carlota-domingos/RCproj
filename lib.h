@@ -1,17 +1,36 @@
-#ifndef LIB_H_INCLUDED#define LIB_H_INCLUDED
-#include <stdio.h>
+#ifndef LIB_H_INCLUDED
+#define LIB_H_INCLUDED
+#include namespace std
+#include "lib.cpp"
+#include <stddef.h>
+#include <netdb.h>
+#include <cstdio>
+#include <arpa/inet.h>
+#include <iostream>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
 #include <string.h>
+#include <fstream>
+#include <sys/stat.h>
 #include <unistd.h>
-#include <errno.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/time.h>
-#include <sys/select.h>
 
+
+
+void create_directories();
+
+int get_msg(char *msgbuffer);
+int case_(char * buffer);
+
+
+int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size);
+int send_socket_udp_player(int fd_udp, const char *message, struct addrinfo *infoaddr);
+int init_socket_player(const char *hostname, struct addrinfo *&infoaddr);
+
+
+int send_message_server(int fd_udp, const char* buffer, size_t length, struct sockaddr_in& addr, socklen_t addrlen_udp) ;
+ssize_t receive_message_server(int fd_udp, char* buffer, size_t buffer_size, struct sockaddr_in& addr, socklen_t& addrlen_udp) ;
+int bind_socket_server(int fd_udp, struct addrinfo* infoaddr) ;
 
 
 #endif

@@ -6,167 +6,23 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
-#include <iostream>
 #include <cstdio>
 #include <arpa/inet.h>
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
-#include <unistd.h>
+#include "lib.h"
 
 #define PORT "58001"
 #define BUFFER_SIZE 128
 
-//ve se é um int 
-int is_number(const char *buffer) {
-    size_t len = strlen(buffer);
-    for (size_t i = 0; i < len; i++) {
-        if (!isdigit(buffer[i])) {
-            return 0; // Não é um número
-        }
-    }
-    return 1; // É um número
+
+int code_val(const std::string& code) {
+    std::regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])$");
+    
+    return std::regex_match(code, pattern);
 }
 
-// Função para inicializar o socket
-int init_socket(const char *hostname, struct addrinfo *&infoaddr){
-    int fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_udp < 0) {
-        perror("Erro ao criar socket");
-        return -1;
-    }
-
-    addrinfo hints;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-
-    int errcode_udp = getaddrinfo(hostname, PORT, &hints, &infoaddr);
-    if (errcode_udp != 0)   {
-        perror("Erro ao resolver endereço");
-        close(fd_udp);
-        return -1;
-    }
-
-    return fd_udp; 
-}
-
-// Função para enviar mensagem???????????????????????????????
-int send_socket_udp(int fd_udp, const char *message, struct addrinfo *infoaddr)
-{
-    ssize_t n = sendto(fd_udp, message, strlen(message), 0, infoaddr->ai_addr, infoaddr->ai_addrlen);
-    if (n == -1)    {
-        perror("Erro ao enviar mensagem");
-        return -1;
-    }
-    return 0; 
-}
-
-// Função para receber mensagem
-int receive_socket_udp(int fd_udp, char *buffer, size_t buffer_size)
-{
-    sockaddr_in addr;
-    socklen_t addrlen = sizeof(addr);
-
-    ssize_t n = recvfrom(fd_udp, buffer, buffer_size, 0, (struct sockaddr *)&addr, &addrlen);
-    if (n == -1)    {
-        perror("Erro ao receber mensagem");
-        return -1;
-    }
-
-    buffer[n] = '\0'; // Certifica-se de que o buffer termina com '\0' (para strings)
-    return n;         // Retorna o número de bytes recebidos
-}
-
-//funcao para ler do terminal
-int get_msg(char *msgbuffer) {
-    char c;
-    int i = 0;
-    while ((c = getchar())!= EOF || c != '\n' || i < 128) {
-        if(c =='\n'){
-            break;
-        }
-        msgbuffer[i] = c;
-        i++;
-    }
-    msgbuffer[i] = '\0';  
-    //case(msgbuffer);
-    return 0;
-}
-
-
-int case(char * buffer){
-    size_t len
-
-
-        if ((buffer.compare("sb"))==0 || (buffer.compare("scoreboard"))==0) {
-            /* pasta score TCP */
-            return 0;
-        }
-        else if ((buffer.compare("st"))==0 || (buffer.compare("show_trials"))==0) {
-            /* pasta games TCP */
-            return 1;
-        }
-        else if ((buffer.compare("quit"))==0 ) {
-            /* QUIT */
-            return 2;
-        }
-        else if ((buffer.compare("exit"))==0 ) {
-            /* EXIT */
-            return 3;
-        }
-        else if ((buffer.compare("exit"))==0 ) {
-            /* EXIT */
-            return 4;
-        }
-        else if ((buffer.substr(0,3).compare("try "))==0 ) {
-            return 5;
-        }
-        else if (buffer.substr(0,5).compare("debug ")){
-            return 6;
-        } 
-        else if (buffer.substr(0,5).compare("start ")){
-            return 7;
-        }
-    return -1;  
-} 
-
-
-/*int switch_case(int case, int fd_udp, addrinfo *infoaddr) {
-    int i=0;
-    char c;
-    size_t len = strlen(buffer);          
-    switch (buffer) {
-        case len <= 10 && is_number(buffer[i])==1 :
-            if (send_socket_udp(fd_udp, buffer , infoaddr) < 0)   {
-                freeaddrinfo(infoaddr);
-                close(fd_udp);
-                return 1;
-            }
-            break;
-    case //c seja uma letra espaco letra :
-        // code 
-        break;
-    case //c0 seja s e c1 seja t ou palavra show_trials :
-        // code 
-        break;
-    case //c0 seja s e c1 seja b ou palavra scoreboard:
-        // code 
-        break;
-    case //quit:
-        // code 
-        break;
-    case //exit:
-        // code 
-        break;
-    case //c seja um numero e len_buff < 10 (caso normal):
-        // code 
-        break;
-
-    default:
-        break;
-    }
-}*/
 
 
 int main() {
@@ -176,7 +32,7 @@ int main() {
     char sendmsg[BUFFER_SIZE];  
 
     // Inicializa o socket
-    int fd_udp = init_socket("localhost", infoaddr);
+    int fd_udp = init_socket_player("localhost", infoaddr);
     if (fd_udp < 0) {
         return 1;
     }
@@ -190,14 +46,14 @@ int main() {
 
         printf("%s", "a");
         // Envia mensagem
-        if (send_socket_udp(fd_udp, sendmsg , infoaddr) < 0)   {
+        if (send_socket_udp_player(fd_udp, sendmsg , infoaddr) < 0)   {
             freeaddrinfo(infoaddr);
             close(fd_udp);
             return 1;
         }
 
         // Recebe mensagem
-        int n = receive_socket_udp(fd_udp, buffer, BUFFER_SIZE);
+        int n = receive_socket_udp_player(fd_udp, buffer, BUFFER_SIZE);
         if (n < 0)  {
             freeaddrinfo(infoaddr);
             close(fd_udp);
@@ -212,9 +68,6 @@ int main() {
 
 
     }   
-    
-    
-
     // Limpeza
     freeaddrinfo(infoaddr);
     close(fd_udp);

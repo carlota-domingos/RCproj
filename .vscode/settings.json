@@ -1,1 +1,10 @@
-{}
+{
+    "files.associations": {
+        "*.pl": "prolog",
+        "*.lp": "prolog",
+        "*.tcc": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "regex": "cpp"
+    }
+}
