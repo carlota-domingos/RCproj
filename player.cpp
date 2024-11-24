@@ -1,4 +1,3 @@
-#include namespace std
 #include <unistd.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -13,23 +12,49 @@
 #include <sys/stat.h>
 #include "lib.h"
 
+using namespace std;
+
+
 #define PORT "58001"
 #define BUFFER_SIZE 128
+// class game_player{
+//     public:
+//         string plid;
+//         int nT;
+//         void _init_(string id){
+//             plid= id;
+//             nT= 0;
+//         }
+//         void next_try(){
+//             nT++;
+//         }
+//         bool same_try(int server_try){
+//             return nT==server_try;
+//         }
+// }
 
+// game_player curr_game;
 
-int code_val(const std::string& code) {
-    std::regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])$");
-    
-    return std::regex_match(code, pattern);
-}
+// int add_args(string &msg, int code){
+//     switch(code){
+//         case 1:
+//         case 2:
+//         case 3:
+//         case 4:
+//         case 5:
+//         case 6:
+//         case 7:
+//     }
 
-
+// }
 
 int main() {
     struct addrinfo *infoaddr = nullptr; // Ponteiro para guardar informações do endereço
     char buffer[BUFFER_SIZE];
     //char msgbuffer[BUFFER_SIZE];
-    char sendmsg[BUFFER_SIZE];  
+    string sendmsg;  
+    int code;
+    
 
     // Inicializa o socket
     int fd_udp = init_socket_player("localhost", infoaddr);
@@ -43,10 +68,15 @@ int main() {
             perror("Erro ao ler a mensagem");
             return -1;
         } 
+        if((code= case_(sendmsg)) == -1)
+            continue;
+        // else if (code > 0)
+        //     add_args(sendmsg, code);
 
         printf("%s", "a");
         // Envia mensagem
-        if (send_socket_udp_player(fd_udp, sendmsg , infoaddr) < 0)   {
+        const char* csendmsg = sendmsg.c_str(); 
+        if (send_socket_udp_player(fd_udp, csendmsg , infoaddr) < 0)   {
             freeaddrinfo(infoaddr);
             close(fd_udp);
             return 1;

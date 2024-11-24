@@ -1,4 +1,4 @@
-#include namespace std
+
 #include <stddef.h>
 #include <cstdio>
 #include <arpa/inet.h>
@@ -11,6 +11,10 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <regex>
+#include <string>
+
+using namespace std;
 
 #define PORT "58001"
 #define BUFFER_SIZE 128
@@ -28,60 +32,93 @@ void create_directories() {
     }
 }
 
+int code_val(const std::string& code) {
+    regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])");
+    
+    return regex_match(code, pattern);
+}
 
-int case_(char * buffer){
-    size_t len
-        if ((buffer.compare("sb"))==0 || (buffer.compare("scoreboard"))==0) {
-            /* pasta score TCP */
-            return 0;
-        }
-        else if ((buffer.compare("st"))==0 || (buffer.compare("show_trials"))==0) {
-            /* pasta games TCP */
-            return 1;
-        }
-        else if ((buffer.compare("quit"))==0 ) {
-            /* QUIT N E PRECISO MANDAR*/
-            return 2;
-        }
-        else if ((buffer.compare("exit"))==0 ) {
-            /* EXIT N E PRECISO MANDAR*/
-            return 3;
-        }
-        else if ((buffer.substr(0,3).compare("try "))==0 ) {
-            if (code_val(const std::string& buffer.substr(5,12)) == 0){
+bool valid_time(const string& str) {
+    try {
+        int num = stoi(str);
+        return num >= 0 && num <= 600;
+    } catch (...) {
+        return false;
+    }
+}
 
-            }
+string rm_spaces(const string& str) {
+    string trimmed = regex_replace(str, regex("^\\s+|\\s+$"), "");
+    return regex_replace(trimmed, regex("\\s+"), " ");
+}
+
+
+int case_(string &buffer){
+    buffer= rm_spaces(buffer);
+    if ((buffer.compare("sb"))==0 || (buffer.compare("scoreboard"))==0) {
+        buffer = "SSB";
+        return 0;
+    }
+    else if ((buffer.compare("st"))==0 || (buffer.compare("show_trials"))==0) {
+        buffer = "STR "; 
+        return 1;
+    }
+    else if ((buffer.compare("quit"))==0 ) {
+        buffer = "QUT ";
+        return 2;
+    }
+    else if ((buffer.compare("exit"))==0 ) {
+        buffer = "QUT ";
+        return 3;
+    }
+    else if (buffer.size() > 4 && (buffer.substr(0,4).compare("try ")) ==0){
+        if (code_val(buffer.substr(4,12)) == true){
+            buffer =  "TRY PLID "+ buffer.substr(4,12) +" nT";
             return 5;
         }
-        else if (buffer.substr(0,5).compare("debug ")){
-           
-
-            return 6;
-        } 
-        else if (buffer.substr(0,5).compare("start ")){
-            return 7;
+    }
+    else if (buffer.substr(0,6).compare("debug ")==0){
+        regex pattern("^debug (\\d{6}) (\\d{1,3}) (.*)$");
+        smatch matches;
+        if (regex_match(buffer, matches, pattern)) {
+            string plid  = matches[1];
+            string time = matches[2];
+            string code = matches[3];
+            if (valid_time(time) && code_val(code)) {
+                buffer ="DBG "+ plid + " " + time + " " + code;
+                return 6;
+            }
         }
-        else {
-            printf("Erro: Mensagem introduzida nao esta de acordo com as normas");
+    } 
+    else if (buffer.substr(0,6).compare("start ")==0){
+        regex pattern("^start (\\d{6}) (\\d{1,3})$");
+        smatch matches;
+        if (regex_match(buffer, matches, pattern)) {
+            string plid  = matches[1];
+            string time = matches[2];
+            if (valid_time(time)) {
+                buffer= "SNG "+ plid +" "+ time;
+                return 7;
+            }
         }
-
+    }
+    printf("Erro: Mensagem introduzida nao esta de acordo com as normas\n");
+    buffer = "";
     return -1;  
 } 
 
 
 //funcao para ler do terminal
-int get_msg(char *msgbuffer) {
+int get_msg(string &msg) {
     char c;
     int i = 0;
-    while ((c = getchar())!= EOF || c != '\n' || i < 128) {
-        if(c =='\n'){
-            break;
-        }
+    char msgbuffer[BUFFER_SIZE];
+    while ((c = getchar()) != EOF && c != '\n' && i < BUFFER_SIZE - 1) {
         msgbuffer[i] = c;
         i++;
     }
     msgbuffer[i] = '\0';  
-    //case(msgbuffer);
+    msg = string(msgbuffer);
     return 0;
 }
 
@@ -151,6 +188,8 @@ void generate_random_colors(char *result) {
 
 
 //////////////////////////////////////////---PLAYER---///////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 // Função para inicializar o socket
 int init_socket_player(const char *hostname, struct addrinfo *&infoaddr){

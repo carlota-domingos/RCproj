@@ -14,7 +14,7 @@
 #define NUM_COLORS 4
 
 /*
-void case_( char *buffer) {
+void case_( char *buffe<r) {
     size_t len = strlen(buffer);          
     switch (c = buffer[i]) {
     case //c seja um numero e len_buff < 10 (caso normal) :
@@ -81,7 +81,7 @@ int main() {
         write(1, buffer, n);
         write(1, "\n", 1);
         
-        case(buffer);
+        // case_(buffer);
 
         // Envia a mensagem de volta para o endereço de onde foi recebida
         if (send_message_server(fd_udp, "tudo tudo ok", 12, addr, addrlen_udp) < 0) {

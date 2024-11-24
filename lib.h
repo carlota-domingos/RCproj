@@ -1,6 +1,5 @@
 #ifndef LIB_H_INCLUDED
 #define LIB_H_INCLUDED
-#include namespace std
 #include "lib.cpp"
 #include <stddef.h>
 #include <netdb.h>
@@ -15,18 +14,19 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+using namespace std;
+
 
 
 void create_directories();
 
-int get_msg(char *msgbuffer);
-int case_(char * buffer);
-
+int get_msg(string &msg);
+int case_(string &buffer);
+int code_val(const string& code);
 
 int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size);
 int send_socket_udp_player(int fd_udp, const char *message, struct addrinfo *infoaddr);
 int init_socket_player(const char *hostname, struct addrinfo *&infoaddr);
-
 
 int send_message_server(int fd_udp, const char* buffer, size_t length, struct sockaddr_in& addr, socklen_t addrlen_udp) ;
 ssize_t receive_message_server(int fd_udp, char* buffer, size_t buffer_size, struct sockaddr_in& addr, socklen_t& addrlen_udp) ;
