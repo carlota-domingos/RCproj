@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <regex>
 #include <string>
+#include <filesystem>
+
 
 using namespace std;
 
@@ -29,6 +31,16 @@ void create_directories() {
     // Criando o diretório show_trials
     if (mkdir("GAMES", 0777) == -1) {
         perror("Erro ao criar diretório GAMES");
+    }
+}
+
+void create_file(const string& directory, const string& filename) {
+    string file_path = directory + "/" + filename;
+
+    ofstream file(file_path);
+    
+    if (!file) {
+        cerr << "Erro ao criar o arquivo: " << file_path << endl;
     }
 }
 
@@ -59,25 +71,7 @@ int case_(string &buffer){
         buffer = "SSB";
         return 0;
     }
-    else if ((buffer.compare("st"))==0 || (buffer.compare("show_trials"))==0) {
-        buffer = "STR "; 
-        return 1;
-    }
-    else if ((buffer.compare("quit"))==0 ) {
-        buffer = "QUT ";
-        return 2;
-    }
-    else if ((buffer.compare("exit"))==0 ) {
-        buffer = "QUT ";
-        return 3;
-    }
-    else if (buffer.size() > 4 && (buffer.substr(0,4).compare("try ")) ==0){
-        if (code_val(buffer.substr(4,12)) == true){
-            buffer =  "TRY PLID "+ buffer.substr(4,12) +" nT";
-            return 5;
-        }
-    }
-    else if (buffer.substr(0,6).compare("debug ")==0){
+    else if (buffer.size() > 6 && buffer.substr(0,6).compare("debug ")==0){
         regex pattern("^debug (\\d{6}) (\\d{1,3}) (.*)$");
         smatch matches;
         if (regex_match(buffer, matches, pattern)) {
@@ -86,11 +80,11 @@ int case_(string &buffer){
             string code = matches[3];
             if (valid_time(time) && code_val(code)) {
                 buffer ="DBG "+ plid + " " + time + " " + code;
-                return 6;
+                return 1;
             }
         }
     } 
-    else if (buffer.substr(0,6).compare("start ")==0){
+    else if (buffer.size() > 6 && buffer.substr(0,6).compare("start ")==0){
         regex pattern("^start (\\d{6}) (\\d{1,3})$");
         smatch matches;
         if (regex_match(buffer, matches, pattern)) {
@@ -98,8 +92,26 @@ int case_(string &buffer){
             string time = matches[2];
             if (valid_time(time)) {
                 buffer= "SNG "+ plid +" "+ time;
-                return 7;
+                return 2;
             }
+        }
+    }
+    else if ((buffer.compare("st"))==0 || (buffer.compare("show_trials"))==0) {
+        buffer = "STR PLID"; 
+        return 3;
+    }
+    else if ((buffer.compare("quit"))==0 ) {
+        buffer = "QUT PLID";
+        return 4;
+    }
+    else if ((buffer.compare("exit"))==0 ) {
+        buffer = "QUT PLID";
+        return 5;
+    }
+    else if (buffer.size() > 4 && (buffer.substr(0,4).compare("try ")) ==0){
+        if (code_val(buffer.substr(4,12)) == true){
+            buffer =  "TRY PLID "+ buffer.substr(4,12) +" nT";
+            return 6;
         }
     }
     printf("Erro: Mensagem introduzida nao esta de acordo com as normas\n");

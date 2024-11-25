@@ -5,6 +5,7 @@
         "*.tcc": "cpp",
         "string": "cpp",
         "string_view": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "iosfwd": "cpp"
     }
 }

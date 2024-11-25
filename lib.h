@@ -13,12 +13,15 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <filesystem>
+
 
 using namespace std;
 
 
 
 void create_directories();
+void create_file(const string& directory, const string& filename);
 
 int get_msg(string &msg);
 int case_(string &buffer);
