@@ -64,6 +64,15 @@ int add_args(string &msg, int code){
     return 0;
 }
 
+int case_server(const char* buffer_received) {
+    std::string buffer(buffer_received); // Converte o buffer recebido em std::string
+    std::string PLID; // Para armazenar o PLID
+
+    std::cout << "Buffer recebido server: '" << buffer << "'" << std::endl;
+
+    
+}
+
 int main() {
     struct addrinfo *infoaddr = nullptr; // Ponteiro para guardar informações do endereço
     char buffer[BUFFER_SIZE];
@@ -84,7 +93,7 @@ int main() {
             return -1;
         } 
 
-        if((code= case_(sendmsg)) == -1 || add_args(sendmsg, code) == -1)
+        if((code= case_terminal(sendmsg)) == -1 || add_args(sendmsg, code) == -1)
             continue;
         else if (code == 5)
             flag = 0;
@@ -106,6 +115,10 @@ int main() {
                 close(fd_udp);
                 return 1;
             }
+            else{
+               case_server(buffer);
+            }
+            
 
         }
         

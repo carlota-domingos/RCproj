@@ -65,7 +65,7 @@ string rm_spaces(const string& str) {
 }
 
 
-int case_(string &buffer){
+int case_terminal(string &buffer){
     buffer= rm_spaces(buffer);
     if ((buffer.compare("sb"))==0 || (buffer.compare("scoreboard"))==0) {
         buffer = "SSB";
