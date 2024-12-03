@@ -27,7 +27,7 @@ public:
     game_player(const std::string& id) : plid(id), nT(0){}
 
     void reset() {
-        nT = 0;
+        nT = 1;
         plid = "none";
     }
 
@@ -68,7 +68,7 @@ int case_server(const char* buffer_received, string &sendmsg){
     std::string buffer(buffer_received); // Converte o buffer recebido em std::string
     
     std::cout << "Buffer recebido server: '" << buffer << "'" << std::endl;
-    if (buffer.compare("RSG OK\n")==0){
+    if (buffer.compare("RSG OK\n")==0 || buffer.compare("RDB OK\n")==0) {
         std::cout << "Jogo iniciado com sucesso" << std::endl;
         curr_game.reset();
         curr_game.plid = sendmsg.substr(4, 6); 
