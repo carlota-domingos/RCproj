@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define PORT "58001"
+#define PORT "58011"
 #define BUFFER_SIZE 128
 #define NUM_COLORS 4
 
@@ -231,7 +231,7 @@ int send_socket_udp_player(int fd_udp, const char *message, struct addrinfo *inf
 {
     ssize_t n = sendto(fd_udp, message, strlen(message), 0, infoaddr->ai_addr, infoaddr->ai_addrlen);
     if (n == -1)    {
-        perror("Erro ao enviar mensagem");
+        perror("Erro ao enviar mensagem"); 
         return -1;
     }
     return 0; 

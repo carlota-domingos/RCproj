@@ -15,7 +15,7 @@
 using namespace std;
 
 
-#define PORT "58001"
+#define PORT "58011"
 #define BUFFER_SIZE 128
 
 int flag = 1;
@@ -64,12 +64,17 @@ int add_args(string &msg, int code){
     return 0;
 }
 
-int case_server(const char* buffer_received) {
+int case_server(const char* buffer_received, string &sendmsg){
     std::string buffer(buffer_received); // Converte o buffer recebido em std::string
-    std::string PLID; // Para armazenar o PLID
-
+    
     std::cout << "Buffer recebido server: '" << buffer << "'" << std::endl;
-
+    if (buffer.compare("RSG OK\n")==0){
+        std::cout << "Jogo iniciado com sucesso" << std::endl;
+        curr_game.reset();
+        curr_game.plid = sendmsg.substr(4, 6); 
+        printf("PLID: %s\n", curr_game.plid.c_str());
+    }
+    return 0;
     
 }
 
@@ -81,7 +86,7 @@ int main() {
     int n=0;
 
     // Inicializa o socket
-    int fd_udp = init_socket_player("localhost", infoaddr);
+    int fd_udp = init_socket_player("193.136.138.142", infoaddr);
     if (fd_udp < 0) {
         return 1;
     }
@@ -97,7 +102,8 @@ int main() {
             continue;
         else if (code == 5)
             flag = 0;
-        cout << "msg: " << sendmsg << endl;
+        sendmsg = sendmsg + '\n';
+        std::cout << "msg: '" << sendmsg << "'" << std::endl;
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
         if (code== 0 || code == 3){
             //tcp
@@ -116,7 +122,7 @@ int main() {
                 return 1;
             }
             else{
-               case_server(buffer);
+               case_server(buffer, sendmsg);
             }
             
 

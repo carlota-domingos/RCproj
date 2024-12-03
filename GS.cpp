@@ -60,6 +60,8 @@ public:
 };
 
 int init_game(const std::string& PLID, int time){
+    //checkar e ver se o plid ja esta ativo ou nao 
+    //ver return dependendo do caso do erro
     char colour_code[NUM_COLORS + 1]; // +1 para o terminador nulo
     generate_random_colors(colour_code);
     game_player new_player(PLID, time, std::string(colour_code));
@@ -76,7 +78,7 @@ int init_game(const std::string& PLID, int time){
 int case_player(const char* buffer_received) {
     std::string buffer(buffer_received); // Converte o buffer recebido em std::string
     std::string PLID; // Para armazenar o PLID
-
+    std::string send_buffer; // Para armazenar a mensagem a enviar
     std::cout << "Buffer recebido: '" << buffer << "'" << std::endl;
 
     // Caso SCORES
