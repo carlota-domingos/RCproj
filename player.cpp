@@ -28,7 +28,7 @@ public:
 
     void reset() {
         nT = 1;
-        plid = "none";
+        plid = "none12";
     }
 
     void next_try() {
@@ -63,19 +63,75 @@ int add_args(string &msg, int code){
     }
     return 0;
 }
+#include <iostream>
+#include <string>
 
-int case_server(const char* buffer_received, string &sendmsg){
-    std::string buffer(buffer_received); // Converte o buffer recebido em std::string
+using namespace std;
+
+int case_server(const char* buffer_received, int code, string &sendmsg) {
+    std::string buffer(buffer_received); // Convert the received buffer to std::string
     
     std::cout << "Buffer recebido server: '" << buffer << "'" << std::endl;
-    if (buffer.compare("RSG OK\n")==0 || buffer.compare("RDB OK\n")==0) {
-        std::cout << "Jogo iniciado com sucesso" << std::endl;
-        curr_game.reset();
-        curr_game.plid = sendmsg.substr(4, 6); 
-        printf("PLID: %s\n", curr_game.plid.c_str());
+
+    if (buffer.substr(0, 3) == "RDB") {
+        if (buffer == "RDB OK\n") {
+            std::cout << "Jogo iniciado com sucesso" << std::endl;
+            curr_game.reset();
+            curr_game.plid = sendmsg.substr(4, 6); 
+            printf("PLID: %s\n", curr_game.plid.c_str());
+        } else if (buffer == "RDB NOK\n") {
+            cout << "Player already in a game" << endl;
+        } else if (buffer == "RDB ERR\n") {
+            cout << "Incorrect arguments given" << endl;
+        }
+    } else if (buffer.substr(0, 3) == "RSG") {
+        if (buffer == "RSG OK\n") {
+            std::cout << "Jogo iniciado com sucesso" << std::endl;
+            curr_game.reset();
+            curr_game.plid = sendmsg.substr(4, 6); 
+            printf("PLID: %s\n", curr_game.plid.c_str());
+        } else if (buffer == "RSG NOK\n") {
+            cout << "Player already in a game" << endl;
+        } else if (buffer == "RSG ERR\n") {
+            cout << "Incorrect arguments given" << endl;
+        }
+    } else if (buffer.substr(0, 3) == "STR") {
+        if (buffer.substr(0, 6) == "STR OK") {
+            cout << "Numero de tentativas: " << buffer.substr(8, 1) << endl;
+        }
+    } else if (buffer.substr(0, 3) == "RQT") {
+        if (buffer.substr(0, 6) == "RQT OK") {
+            cout << "Jogo terminado com sucesso" << endl;
+            cout << "Codigo: " << buffer.substr(7, 7) << endl;
+            curr_game.reset();
+        } else if (buffer.substr(0, 7) == "RQT NOK") {
+            cout << "Nao existe jogo ativo" << endl;
+        } else if (buffer.substr(0, 7) == "RQT ERR") {
+            cout << "Erro ao terminar o jogo." << endl;
+        }
+    } else if (buffer.substr(0, 3) == "RTR") {
+        if (buffer.substr(0, 6) == "RTR OK") {
+            curr_game.next_try();
+            cout << "nB: " << buffer.substr(9, 1) << " nW: " << buffer.substr(11, 1) << endl;
+            //checkar se o jogo acabou
+        } else if (buffer == "RTR ERR\n") {
+            cout << "Argumentos inválidos" << endl;
+        } else if (buffer.substr(0, 7) == "RTR ETM") {
+            cout << "Tempo esgotado. Codigo: " << buffer.substr(8, 7) << endl;
+            curr_game.reset();
+        } else if (buffer.substr(0, 7) == "RTR ENT") {
+            cout << "Numero de tentativas Esgotado. Código: " << buffer.substr(8, 7) << endl;
+            curr_game.reset();
+        } else if (buffer== "RTR NOK\n") {
+            cout << "Nao existe jogo ativo" << endl;
+        } else if (buffer== "RTR INV\n") {
+            cout << "Erro na comunicação" << endl;
+        } else if (buffer == "RTR DUP\n") {
+            cout << "Tentativa duplicada" << endl;
+        }
     }
+
     return 0;
-    
 }
 
 int main() {
@@ -122,7 +178,7 @@ int main() {
                 return 1;
             }
             else{
-               case_server(buffer, sendmsg);
+               case_server(buffer, code, sendmsg);
             }
             
 

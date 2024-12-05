@@ -108,8 +108,8 @@ int case_terminal(string &buffer){
         buffer = "QUT PLID";
         return 5;
     }
-    else if (buffer.size() > 4 && (buffer.substr(0,4).compare("try ")) ==0){
-        if (code_val(buffer.substr(4,12)) == true){
+    else if (buffer.size() >= 11 && (buffer.substr(0,4).compare("try ")) ==0){
+        if (code_val(buffer.substr(4,7)) == true){
             buffer =  "TRY PLID "+ buffer.substr(4,12) +" nT";
             return 6;
         }
