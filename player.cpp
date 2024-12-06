@@ -71,34 +71,44 @@ using namespace std;
 int case_server(const char* buffer_received, int code, string &sendmsg) {
     std::string buffer(buffer_received); // Convert the received buffer to std::string
     
-    std::cout << "Buffer recebido server: '" << buffer << "'" << std::endl;
-
     if (buffer.substr(0, 3) == "RDB") {
         if (buffer == "RDB OK\n") {
-            std::cout << "Jogo iniciado com sucesso" << std::endl;
+            std::cout << "Pode começar a jogar :)" << std::endl;
             curr_game.reset();
             curr_game.plid = sendmsg.substr(4, 6); 
-            printf("PLID: %s\n", curr_game.plid.c_str());
         } else if (buffer == "RDB NOK\n") {
             cout << "Player already in a game" << endl;
         } else if (buffer == "RDB ERR\n") {
             cout << "Incorrect arguments given" << endl;
         }
+
     } else if (buffer.substr(0, 3) == "RSG") {
         if (buffer == "RSG OK\n") {
-            std::cout << "Jogo iniciado com sucesso" << std::endl;
+            std::cout << "Pode começar a jogar :)" << std::endl;
             curr_game.reset();
             curr_game.plid = sendmsg.substr(4, 6); 
-            printf("PLID: %s\n", curr_game.plid.c_str());
+            
         } else if (buffer == "RSG NOK\n") {
             cout << "Player already in a game" << endl;
         } else if (buffer == "RSG ERR\n") {
             cout << "Incorrect arguments given" << endl;
         }
-    } else if (buffer.substr(0, 3) == "STR") {
-        if (buffer.substr(0, 6) == "STR OK") {
-            cout << "Numero de tentativas: " << buffer.substr(8, 1) << endl;
+
+    } else if (buffer.substr(0, 3) == "RST") {
+        if (buffer.substr(0, 7) == "RST ACT") {
+            printf("entrou no caso RST ACT\n");
+        } else if (buffer.substr(0, 7) == "RST FIN") {
+            printf("entrou no caso RST FIN\n");
+        } else if (buffer.substr(0, 7) == "RST NOK") {
+            cout << "Não existe jogos ativos ou passados do player" << endl;
         }
+
+    }else if(buffer.substr(0, 3) == "RSS") {
+        if (buffer == "RSS EMPTY\n") {
+            cout<< "Não existe scores para a scoreboard" << endl;
+        } else if (buffer.substr(0, 7) == "RSS OK") {
+            cout<< "Scores: " << endl;
+        } 
     } else if (buffer.substr(0, 3) == "RQT") {
         if (buffer.substr(0, 6) == "RQT OK") {
             cout << "Jogo terminado com sucesso" << endl;
@@ -113,7 +123,12 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
         if (buffer.substr(0, 6) == "RTR OK") {
             curr_game.next_try();
             cout << "nB: " << buffer.substr(9, 1) << " nW: " << buffer.substr(11, 1) << endl;
-            //checkar se o jogo acabou
+            if (buffer.substr(9, 1) == "4") {
+                cout << "Jogo Ganho !" << endl;
+                if (buffer.size() > 15)
+                    cout << "Codigo: " << buffer.substr(15, 7) << endl;
+                curr_game.reset();
+            }
         } else if (buffer == "RTR ERR\n") {
             cout << "Argumentos inválidos" << endl;
         } else if (buffer.substr(0, 7) == "RTR ETM") {
@@ -135,18 +150,22 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
 }
 
 int main() {
-    struct addrinfo *infoaddr = nullptr; // Ponteiro para guardar informações do endereço
+    struct addrinfo *infoaddr = nullptr;
+    //struct addrinfo *infoaddr_tcp = nullptr; // Ponteiro para guardar informações do endereço
     char buffer[BUFFER_SIZE];
     string sendmsg;  
     int code;
     int n=0;
 
     // Inicializa o socket
-    int fd_udp = init_socket_player("193.136.138.142", infoaddr);
-    if (fd_udp < 0) {
+    int fd = init_socket_player("193.136.138.142", infoaddr);
+    if (fd < 0) {
         return 1;
     }
-   
+    int fd_tcp = init_tcp_player("193.136.138.142", PORT);
+    if (fd_tcp < 0) {
+        return 1;
+    }
    //loop para durante o jogo                                                     
     while (flag == 1) {
         if (get_msg(sendmsg) != 0)  {
@@ -156,25 +175,47 @@ int main() {
 
         if((code= case_terminal(sendmsg)) == -1 || add_args(sendmsg, code) == -1)
             continue;
-        else if (code == 5)
+        else if (code == 5){
             flag = 0;
+            printf("A sair do jogo\n");
+        }
         sendmsg = sendmsg + '\n';
-        std::cout << "msg: '" << sendmsg << "'" << std::endl;
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
-        if (code== 0 || code == 3){
-            //tcp
-        } else {
-            if (send_socket_udp_player(fd_udp, csendmsg , infoaddr) < 0)   {
+        
+        if (code == 0 || code == 3){ //mensagem por tcp
+
+            if ((send_tcp_player(fd_tcp,csendmsg)) < 0) {
                 freeaddrinfo(infoaddr);
-                close(fd_udp);
+                close(fd);
+                
+                printf("erro aqui");
+                return 1;
+            }
+            n = receive_tcp_player(fd, buffer, BUFFER_SIZE);
+            printf("%d",n);
+            if (n < 0)  {
+                freeaddrinfo(infoaddr);
+                close(fd);
+                return 1;
+            }
+            else{
+               case_server(buffer, code, sendmsg);
+
+            }
+            
+
+        } else { //mensagem por udp
+            if (send_socket_udp_player(fd, csendmsg , infoaddr) < 0)   {
+                freeaddrinfo(infoaddr);
+                close(fd);
                 return 1;
             }
 
             // Recebe mensagem
-            n = receive_socket_udp_player(fd_udp, buffer, BUFFER_SIZE);
+            n = receive_socket_udp_player(fd, buffer, BUFFER_SIZE);
             if (n < 0)  {
                 freeaddrinfo(infoaddr);
-                close(fd_udp);
+                close(fd);
                 return 1;
             }
             else{
@@ -183,18 +224,12 @@ int main() {
             
 
         }
-        
-        if (n !=0){
-            write(1, "echo: ", 6);
-            write(1, buffer, n);
-            write(1, "\n", 1);
-        }
     
         // Imprime a mensagem recebida
         memset(buffer, 0, n);
     }   
     // Limpeza
     freeaddrinfo(infoaddr);
-    close(fd_udp);
+    close(fd);
     return 0;
 }

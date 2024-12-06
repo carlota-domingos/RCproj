@@ -1,4 +1,3 @@
-
 #include <stddef.h>
 #include <cstdio>
 #include <arpa/inet.h>
@@ -226,7 +225,6 @@ int init_socket_player(const char *hostname, struct addrinfo *&infoaddr){
     return fd_udp; 
 }
 
-// Função para enviar mensagem???????????????????????????????
 int send_socket_udp_player(int fd_udp, const char *message, struct addrinfo *infoaddr)
 {
     ssize_t n = sendto(fd_udp, message, strlen(message), 0, infoaddr->ai_addr, infoaddr->ai_addrlen);
@@ -251,4 +249,125 @@ int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size)
 
     buffer[n] = '\0'; // Certifica-se de que o buffer termina com '\0' (para strings)
     return n;         // Retorna o número de bytes recebidos
+}
+
+
+
+
+int init_tcp_player(const char *hostname, const char *port) {
+    int fd;
+    struct addrinfo hints, *res;
+    int errcode;
+
+    // Criar socket TCP
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    // Resolver o endereço do servidor
+    errcode = getaddrinfo(hostname, port, &hints, &res);
+    if (errcode != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(errcode));
+        exit(1);
+    }
+
+    // Conectar ao servidor
+    if (connect(fd, res->ai_addr, res->ai_addrlen) == -1) {
+        perror("connect");
+        freeaddrinfo(res);
+        exit(1);
+    }
+
+    return fd;
+}
+
+int send_tcp_player(int fd, const char *message) {
+    ssize_t n = write(fd, message, strlen(message));
+    if (n == -1) {
+        return -1;
+    }
+    return 0;
+}
+
+ssize_t receive_tcp_player(int fd, char *buffer, size_t size) {
+    ssize_t n = read(fd, buffer, size);
+    if (n == -1) {
+        perror("read");
+        exit(1);
+    }
+    return n;
+}
+
+
+int init_tcp_server(const char *port) {
+    int fd;
+    struct addrinfo hints, *res;
+    int errcode;
+
+    // Cria o socket do servidor
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    // Configura o endereço para o servidor
+    errcode = getaddrinfo(NULL, port, &hints, &res);
+    if (errcode != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(errcode));
+        exit(1);
+    }
+
+    // Faz o bind do endereço ao socket
+    if (bind(fd, res->ai_addr, res->ai_addrlen) == -1) {
+        perror("bind");
+        freeaddrinfo(res);
+        exit(1);
+    }
+
+    // Configura o socket para aceitar conexões
+    if (listen(fd, 5) == -1) {
+        perror("listen");
+        freeaddrinfo(res);
+        exit(1);
+    }
+
+    return fd;
+}
+
+int accept_connection_tcp_server(int server_fd, struct sockaddr_in *addr, socklen_t *addrlen) {
+    int client_fd = accept(server_fd, (struct sockaddr *)addr, addrlen);
+    if (client_fd == -1) {
+        perror("accept");
+        exit(1);
+    }
+    return client_fd;
+}
+
+ssize_t read_message_tcp_server(int client_fd, char *buffer, size_t size) {
+    ssize_t n = read(client_fd, buffer, size);
+    if (n == -1) {
+        perror("read");
+        exit(1);
+    }
+    return n;
+}
+
+void echo_message_tcp_player(int client_fd, const char *message, ssize_t size) {
+    ssize_t n = write(client_fd, message, size);
+    if (n == -1) {
+        perror("write");
+        exit(1);
+    }
 }
