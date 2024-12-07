@@ -254,9 +254,10 @@ int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size)
 
 
 
-int init_tcp_player(const char *hostname, const char *port) {
+
+int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr) {
     int fd;
-    struct addrinfo hints, *res;
+    struct addrinfo hints;
     int errcode;
 
     // Criar socket TCP
@@ -271,16 +272,16 @@ int init_tcp_player(const char *hostname, const char *port) {
     hints.ai_socktype = SOCK_STREAM;
 
     // Resolver o endereço do servidor
-    errcode = getaddrinfo(hostname, port, &hints, &res);
+    errcode = getaddrinfo(hostname, PORT, &hints, &infoaddr);
     if (errcode != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(errcode));
         exit(1);
     }
 
     // Conectar ao servidor
-    if (connect(fd, res->ai_addr, res->ai_addrlen) == -1) {
+    if (connect(fd, infoaddr->ai_addr, infoaddr->ai_addrlen) == -1) {
         perror("connect");
-        freeaddrinfo(res);
+        freeaddrinfo(infoaddr);
         exit(1);
     }
 
@@ -288,10 +289,12 @@ int init_tcp_player(const char *hostname, const char *port) {
 }
 
 int send_tcp_player(int fd, const char *message) {
-    ssize_t n = write(fd, message, strlen(message));
-    if (n == -1) {
+    ssize_t n = write(fd, message, strlen(message));  
+    if (n < 0) {
+        printf("Erro ao enviar mensagem\n");
         return -1;
     }
+    printf("Mensagem enviada\n");
     return 0;
 }
 

@@ -62,6 +62,7 @@ int add_args(string &msg, int code){
         msg.replace(pos, 4, curr_game.plid);
     }
     return 0;
+    
 }
 #include <iostream>
 #include <string>
@@ -145,12 +146,15 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
             cout << "Tentativa duplicada" << endl;
         }
     }
-
+    else if (buffer == "ERR\n") {
+        cout << "Erro ao enviar a mensagem" << endl;
+    }
     return 0;
 }
 
 int main() {
     struct addrinfo *infoaddr = nullptr;
+    struct addrinfo *infoaddr_tcp = nullptr;
     //struct addrinfo *infoaddr_tcp = nullptr; // Ponteiro para guardar informações do endereço
     char buffer[BUFFER_SIZE];
     string sendmsg;  
@@ -162,7 +166,7 @@ int main() {
     if (fd < 0) {
         return 1;
     }
-    int fd_tcp = init_tcp_player("193.136.138.142", PORT);
+    int fd_tcp = init_tcp_player("193.136.138.142", infoaddr_tcp);
     if (fd_tcp < 0) {
         return 1;
     }
@@ -180,28 +184,29 @@ int main() {
             printf("A sair do jogo\n");
         }
         sendmsg = sendmsg + '\n';
+        cout <<"'"<< sendmsg << "'"<< endl;
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
         
         if (code == 0 || code == 3){ //mensagem por tcp
-
-            if ((send_tcp_player(fd_tcp,csendmsg)) < 0) {
+            if ((n = send_tcp_player(fd_tcp,csendmsg)) < 0) {
+                printf("erro a enviar a mensagem");
                 freeaddrinfo(infoaddr);
-                close(fd);
-                
-                printf("erro aqui");
+                close(fd_tcp);
                 return 1;
             }
-            n = receive_tcp_player(fd, buffer, BUFFER_SIZE);
-            printf("%d",n);
+
+            n = receive_tcp_player(fd_tcp, buffer, BUFFER_SIZE);
             if (n < 0)  {
+                printf("erro a receber a mensagem");
                 freeaddrinfo(infoaddr);
-                close(fd);
+                close(fd_tcp);
                 return 1;
             }
             else{
-               case_server(buffer, code, sendmsg);
-
+                cout << buffer << endl;
+                case_server(buffer, code, sendmsg);
             }
+            printf("saiu do case server\n");
             
 
         } else { //mensagem por udp
@@ -221,10 +226,9 @@ int main() {
             else{
                case_server(buffer, code, sendmsg);
             }
-            
-
         }
-    
+
+        printf("%d\n", flag);
         // Imprime a mensagem recebida
         memset(buffer, 0, n);
     }   
