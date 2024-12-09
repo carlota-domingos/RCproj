@@ -242,14 +242,14 @@ int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size)
     socklen_t addrlen = sizeof(addr);
 
     ssize_t n = recvfrom(fd_udp, buffer, buffer_size, 0, (struct sockaddr *)&addr, &addrlen);
-    if (n == -1)    {
-        perror("Erro ao receber mensagem");
+    if (n < 0) {
+        perror("recvfrom");
         return -1;
     }
-
     buffer[n] = '\0'; // Certifica-se de que o buffer termina com '\0' (para strings)
     return n;         // Retorna o número de bytes recebidos
 }
+
 
 
 
@@ -275,6 +275,7 @@ int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr) {
     errcode = getaddrinfo(hostname, PORT, &hints, &infoaddr);
     if (errcode != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(errcode));
+        close(fd);
         exit(1);
     }
 
@@ -282,9 +283,11 @@ int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr) {
     if (connect(fd, infoaddr->ai_addr, infoaddr->ai_addrlen) == -1) {
         perror("connect");
         freeaddrinfo(infoaddr);
+        close(fd);
         exit(1);
     }
 
+    freeaddrinfo(infoaddr); // Free the address info after successful connection
     return fd;
 }
 

@@ -17,7 +17,6 @@
 using namespace std;
 
 
-#define PORT "58011"
 #define BUFFER_SIZE 128
 
 int flag = 1;
@@ -30,7 +29,7 @@ public:
 
     void reset() {
         nT = 1;
-        plid = "none12";
+        plid = "000000";
     }
 
     void next_try() {
@@ -83,6 +82,8 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
         }
 
     } else if (buffer.substr(0, 3) == "RSG") {
+
+        cout << buffer << endl;
         if (buffer == "RSG OK\n") {
             std::cout << "Pode começar a jogar :)" << std::endl;
             curr_game.reset();
@@ -164,14 +165,11 @@ int main() {
     int n=0;
 
     // Inicializa o socket
-    int fd = init_socket_player("193.136.138.142", infoaddr);
+    int fd = init_socket_player("localhost", infoaddr);
     if (fd < 0) {
         return 1;
     }
-    int fd_tcp = init_tcp_player("193.136.138.142", infoaddr_tcp);
-    if (fd_tcp < 0) {
-        return 1;
-    }
+    
    //loop para durante o jogo                                                     
     while (flag == 1) {
         if (get_msg(sendmsg) != 0)  {
@@ -190,6 +188,10 @@ int main() {
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
         
         if (code == 0 || code == 3){ //mensagem por tcp
+            int fd_tcp = init_tcp_player("localhost", infoaddr_tcp);
+            if (fd_tcp < 0) {
+                return 1;
+            }
             printf("entrou no tcp\n");
             if ((n = send_tcp_player(fd_tcp,csendmsg)) < 0) {
                 printf("erro a enviar a mensagem");
@@ -197,7 +199,8 @@ int main() {
                 close(fd_tcp);
                 return 1;
             }
-
+            // Recebe mensagem
+            string fullmsg;
             n = receive_tcp_player(fd_tcp, buffer, BUFFER_SIZE);
             if (n < 0)  {
                 printf("erro a receber a mensagem");
@@ -206,9 +209,24 @@ int main() {
                 return 1;
             }
             else{
-                cout << buffer << endl;
+                fullmsg = string(buffer);
+                cout << "'" <<buffer<< "'" << endl;
                 case_server(buffer, code, sendmsg);
             }
+            while ((n = receive_tcp_player(fd_tcp, buffer, BUFFER_SIZE))> 0) {
+                if (n < 0) {
+                    printf("erro a receber a mensagem");
+                    freeaddrinfo(infoaddr);
+                    close(fd_tcp);
+                    return 1;
+                }
+                else{
+                    fullmsg = fullmsg + string(buffer);
+                }
+                cout << fullmsg << endl;
+            }
+
+            close(fd_tcp);
             printf("saiu do case server tcp\n");
             
 
@@ -221,18 +239,18 @@ int main() {
             }
 
             // Recebe mensagem
-            n = receive_socket_udp_player(fd, buffer, BUFFER_SIZE);
-            if (n < 0)  {
+            int n = receive_socket_udp_player(fd, buffer, BUFFER_SIZE);
+            if (n < 0) {
                 freeaddrinfo(infoaddr);
                 close(fd);
                 return 1;
+            } else if (n == 0) {
+                std::cout << "No message received." << std::endl;
+            } else {
+                case_server(buffer, code, sendmsg);
             }
-            else{
-               case_server(buffer, code, sendmsg);
-            }
-        }
 
-        printf("%d\n", flag);
+        }
         // Imprime a mensagem recebida
         memset(buffer, 0, n);
     }   

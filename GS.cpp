@@ -9,14 +9,12 @@
 #include <unistd.h>
 #include "lib.h"
 #include <filesystem>
-#include <thread<
 
-#define PORT "58001"
 #define BUFFER_SIZE 128
 #define NUM_COLORS 4
 class game_player;
 std::vector<game_player> players;
-int threads_ativas = 0;
+
 
 
 
@@ -25,17 +23,17 @@ public:
     std::string plid;   // Identificador único do jogador
     int nT;             // Número de tentativas
     std::string codigo;
-    int thread;
+    
 
-    game_player(const std::string& id, int time, const std::string& colors, int thread)
-        : plid(id), nT(time), codigo(colors), thread(thread)  {}
+    game_player(const std::string& id, int time, const std::string& colors)
+        : plid(id), nT(time), codigo(colors)  {}
 
     // Reseta o estado do jogador
     void reset() {
         nT = 0;
         plid = "none";
         codigo = "none";
-        thread = 0;
+        
     }
 
     // Incrementa o número de tentativas
@@ -60,7 +58,6 @@ public:
         std::cout << "Player ID: " << plid << "\n";
         std::cout << "Attempts: " << nT << "\n";
         std::cout << "Code: " << codigo << "\n";
-        std::cout << "Thread: " << thread << "\n";
     }
 };
 
@@ -79,7 +76,7 @@ int init_game(const std::string& PLID, int time){
     return 0;
 
 }
-
+/* 
 int get_thread(const std::string& PLID) {
     for (size_t i = 0; i < threads_ativas; i++) {
         if (players[i].plid == PLID) {
@@ -88,7 +85,7 @@ int get_thread(const std::string& PLID) {
     }
     return -1; // Retorna -1 se o jogador não for encontrado
 }
-
+*/
 
 int case_player(const char* buffer_received) {
     std::string buffer(buffer_received); // Converte o buffer recebido em std::string
@@ -169,17 +166,16 @@ int main() {
         return 1;
     }
 
-
-    
     // Loop de recepção e envio de mensagens durante o jogo apenas
     while (1) {
         ssize_t n = receive_message_server(fd_udp, buffer, BUFFER_SIZE, addr, addrlen_udp);
+        std::cout << "n: "<< n << "\n";
         if (n == -1) {
             freeaddrinfo(infoaddr);
             close(fd_udp);
             return 1; 
         }
-
+        
         write(1, "received: ", 10);
         write(1, buffer, n);
         write(1, "\n", 1);
