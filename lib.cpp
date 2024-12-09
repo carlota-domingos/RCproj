@@ -289,10 +289,15 @@ int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr) {
 }
 
 int send_tcp_player(int fd, const char *message) {
-    ssize_t n = write(fd, message, strlen(message));  
-    if (n < 0) {
-        printf("Erro ao enviar mensagem\n");
-        return -1;
+    int size = strlen(message);
+    ssize_t n;
+    while(size > 0) {
+        n = write(fd, message, size);
+        if (n < 0) {
+            printf("Erro ao enviar mensagem\n");
+            return -1;
+        }
+        size -= n;
     }
     printf("Mensagem enviada\n");
     return 0;

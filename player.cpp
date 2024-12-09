@@ -188,6 +188,7 @@ int main() {
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
         
         if (code == 0 || code == 3){ //mensagem por tcp
+            printf("entrou no tcp\n");
             if ((n = send_tcp_player(fd_tcp,csendmsg)) < 0) {
                 printf("erro a enviar a mensagem");
                 freeaddrinfo(infoaddr);
@@ -206,10 +207,11 @@ int main() {
                 cout << buffer << endl;
                 case_server(buffer, code, sendmsg);
             }
-            printf("saiu do case server\n");
+            printf("saiu do case server tcp\n");
             
 
         } else { //mensagem por udp
+            printf("entrou no udp\n");
             if (send_socket_udp_player(fd, csendmsg , infoaddr) < 0)   {
                 freeaddrinfo(infoaddr);
                 close(fd);
@@ -235,5 +237,6 @@ int main() {
     // Limpeza
     freeaddrinfo(infoaddr);
     close(fd);
+    printf("A sair do jogo\n");
     return 0;
 }
