@@ -294,7 +294,7 @@ int send_tcp_player(int fd, const char *message) {
     while(size > 0) {
         n = write(fd, message, size);
         if (n < 0) {
-            printf("Erro ao enviar mensagem\n");
+            printf("Erro ao enviar mensagem no loop tcp\n");
             return -1;
         }
         size -= n;

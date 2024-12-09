@@ -11,6 +11,8 @@
 #include <fstream>
 #include <sys/stat.h>
 #include "lib.h"
+#include <iostream>
+#include <string>
 
 using namespace std;
 
@@ -40,13 +42,13 @@ public:
     }
 };
 
-game_player curr_game = game_player("none12");
+game_player curr_game = game_player("000000");
 
 int add_args(string &msg, int code){
     if (code<= 2){
         return 0;
     }
-    else if(curr_game.plid.compare("none12") == 0 and code != 5){
+    else if(curr_game.plid.compare("000000") == 0 && (code != 5 && code != 4)){
         printf("Erro: não existe um jogo ativo de momento\n");
         msg = "";
         return -1;
@@ -64,10 +66,7 @@ int add_args(string &msg, int code){
     return 0;
     
 }
-#include <iostream>
-#include <string>
 
-using namespace std;
 
 int case_server(const char* buffer_received, int code, string &sendmsg) {
     std::string buffer(buffer_received); // Convert the received buffer to std::string
@@ -115,8 +114,11 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
             cout << "Jogo terminado com sucesso" << endl;
             cout << "Codigo: " << buffer.substr(7, 7) << endl;
             curr_game.reset();
-        } else if (buffer.substr(0, 7) == "RQT NOK") {
+        } else if (buffer.substr(0, 7) == "RQT NOK" && flag == 1) {
             cout << "Nao existe jogo ativo" << endl;
+            if (curr_game.plid.compare("000000") != 0) {
+                curr_game.reset();
+            }
         } else if (buffer.substr(0, 7) == "RQT ERR") {
             cout << "Erro ao terminar o jogo." << endl;
         }
