@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <regex>
 #include <string>
+#include <sstream>
 #include <filesystem>
 
 
@@ -43,7 +44,7 @@ void create_file(const string& directory, const string& filename) {
     }
 }
 
-int code_val(const std::string& code) {
+int code_val(const string& code) {
     regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])");
     
     return regex_match(code, pattern);
@@ -61,6 +62,37 @@ bool valid_time(const string& str) {
 string rm_spaces(const string& str) {
     string trimmed = regex_replace(str, regex("^\\s+|\\s+$"), "");
     return regex_replace(trimmed, regex("\\s+"), " ");
+}
+
+int get_file_msg(string &msg, string &file_out) {
+
+    istringstream stream(msg);
+    string size;
+    int count = 0;
+    while (stream >> size) {
+        if (count == 3) {
+            break;
+        }
+        count++;
+    }
+    if (!size.empty()) {
+        try {
+            int num_chars = stoi(size);
+            size_t pos = msg.find(size);
+            file_out = msg.substr(pos + size.length() + 1, num_chars);
+        } catch (const invalid_argument& e) {
+            cerr << "Invalid file size " << size << endl;
+            return -1;
+        } catch (const out_of_range& e) {
+            cerr << "Number out of range: " << size << endl;
+            return -1;
+        }
+    } else {
+        cout << "Format not correct" << endl;
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -132,7 +164,6 @@ int get_msg(string &msg) {
     msg = string(msgbuffer);
     return 0;
 }
-
 
 //////////////////////////////////////////---SERVER---///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -324,8 +355,6 @@ ssize_t receive_tcp_player(int fd, char *buffer, size_t size) {
 
     // Ensure buffer is null-terminated
     buffer[i] = '\0';
-
-    printf("Received message: %s\n", buffer);
     return i; // Return number of bytes read
 }
 

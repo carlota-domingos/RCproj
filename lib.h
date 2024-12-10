@@ -24,6 +24,7 @@ void create_directories();
 void create_file(const string& directory, const string& filename);
 
 int get_msg(string &msg);
+int get_file_msg(string &msg, string &file_out);
 int case_(string &buffer);
 int code_val(const string& code);
 

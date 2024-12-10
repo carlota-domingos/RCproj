@@ -69,7 +69,8 @@ int add_args(string &msg, int code){
 
 
 int case_server(const char* buffer_received, int code, string &sendmsg) {
-    std::string buffer(buffer_received); // Convert the received buffer to std::string
+    string buffer(buffer_received); // Convert the received buffer to std::string
+    string file_out;
     
     if (buffer.substr(0, 3) == "RDB") {
         if (buffer == "RDB OK\n") {
@@ -98,18 +99,21 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
 
     } else if (buffer.substr(0, 3) == "RST") {
         if (buffer.substr(0, 7) == "RST ACT") {
-            printf("entrou no caso RST ACT\n");
+            get_file_msg(buffer, file_out);
+            cout << file_out << endl;
         } else if (buffer.substr(0, 7) == "RST FIN") {
-            printf("entrou no caso RST FIN\n");
+            get_file_msg(buffer, file_out);
+            cout << file_out << endl;
         } else if (buffer.substr(0, 7) == "RST NOK") {
             cout << "Não existe jogos ativos ou passados do player" << endl;
         }
 
     }else if(buffer.substr(0, 3) == "RSS") {
         if (buffer == "RSS EMPTY\n") {
-            cout<< "Não existe scores para a scoreboard" << endl;
-        } else if (buffer.substr(0, 7) == "RSS OK") {
-            cout<< "Scores: " << endl;
+            cout<< "Não existem scores para a scoreboard" << endl;
+        } else if (buffer.substr(0, 6) == "RSS OK") {
+            get_file_msg(buffer, file_out);
+            cout << file_out << endl;
         } 
     } else if (buffer.substr(0, 3) == "RQT") {
         if (buffer.substr(0, 6) == "RQT OK") {
@@ -185,7 +189,6 @@ int main() {
             printf("A sair do jogo\n");
         }
         sendmsg = sendmsg + '\n';
-        cout <<"'"<< sendmsg << "'"<< endl;
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
         
         if (code == 0 || code == 3){ //mensagem por tcp
@@ -209,11 +212,10 @@ int main() {
                 freeaddrinfo(infoaddr);
                 close(fd_tcp);
                 return 1;
-            }  
-            
-           
-            cout << fullmsg << endl;
-            case_server(buffer, code, sendmsg);
+            } else if (n == 0) 
+                cout << "No message received." << endl;
+            else
+                case_server(buffer, code, sendmsg);
             
 
             close(fd_tcp);
@@ -235,7 +237,7 @@ int main() {
                 close(fd);
                 return 1;
             } else if (n == 0) {
-                std::cout << "No message received." << std::endl;
+                cout << "No message received." << endl;
             } else {
                 case_server(buffer, code, sendmsg);
             }
