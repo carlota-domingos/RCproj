@@ -307,12 +307,26 @@ int send_tcp_player(int fd, const char *message) {
 }
 
 ssize_t receive_tcp_player(int fd, char *buffer, size_t size) {
-    ssize_t n = read(fd, buffer, size);
-    if (n == -1) {
-        perror("read");
-        exit(1);
+    size_t i = 0;
+    ssize_t bytes_read;
+
+    while (i < size - 1) { // Reserve space for null-terminator
+        bytes_read = read(fd, buffer + i, 1); // Read one byte
+        if (bytes_read == -1) {
+            perror("Error while reading from socket");
+            return -1;
+        } else if (bytes_read == 0) {
+            // Connection closed by peer
+            break;
+        }
+        i++;
     }
-    return n;
+
+    // Ensure buffer is null-terminated
+    buffer[i] = '\0';
+
+    printf("Received message: %s\n", buffer);
+    return i; // Return number of bytes read
 }
 
 

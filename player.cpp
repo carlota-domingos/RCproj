@@ -18,6 +18,7 @@ using namespace std;
 
 
 #define BUFFER_SIZE 128
+#define TCP_BUFFER_SIZE 1024
 
 int flag = 1;
 class game_player {
@@ -165,7 +166,7 @@ int main() {
     int n=0;
 
     // Inicializa o socket
-    int fd = init_socket_player("localhost", infoaddr);
+    int fd = init_socket_player("193.136.138.142", infoaddr);
     if (fd < 0) {
         return 1;
     }
@@ -188,7 +189,7 @@ int main() {
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
         
         if (code == 0 || code == 3){ //mensagem por tcp
-            int fd_tcp = init_tcp_player("localhost", infoaddr_tcp);
+            int fd_tcp = init_tcp_player("193.136.138.142", infoaddr_tcp);
             if (fd_tcp < 0) {
                 return 1;
             }
@@ -200,31 +201,20 @@ int main() {
                 return 1;
             }
             // Recebe mensagem
-            string fullmsg;
-            n = receive_tcp_player(fd_tcp, buffer, BUFFER_SIZE);
-            if (n < 0)  {
+            string fullmsg = "";
+            //how tf do we make this work for the entire message
+            n = receive_tcp_player(fd_tcp, buffer, TCP_BUFFER_SIZE);    
+            if (n < 0) {
                 printf("erro a receber a mensagem");
                 freeaddrinfo(infoaddr);
                 close(fd_tcp);
                 return 1;
-            }
-            else{
-                fullmsg = string(buffer);
-                cout << "'" <<buffer<< "'" << endl;
-                case_server(buffer, code, sendmsg);
-            }
-            while ((n = receive_tcp_player(fd_tcp, buffer, BUFFER_SIZE))> 0) {
-                if (n < 0) {
-                    printf("erro a receber a mensagem");
-                    freeaddrinfo(infoaddr);
-                    close(fd_tcp);
-                    return 1;
-                }
-                else{
-                    fullmsg = fullmsg + string(buffer);
-                }
-                cout << fullmsg << endl;
-            }
+            }  
+            
+           
+            cout << fullmsg << endl;
+            case_server(buffer, code, sendmsg);
+            
 
             close(fd_tcp);
             printf("saiu do case server tcp\n");
