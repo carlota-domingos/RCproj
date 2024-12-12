@@ -84,8 +84,6 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
         }
 
     } else if (buffer.substr(0, 3) == "RSG") {
-
-        cout << buffer << endl;
         if (buffer == "RSG OK\n") {
             std::cout << "Pode começar a jogar :)" << std::endl;
             curr_game.reset();
@@ -186,7 +184,6 @@ int main() {
             continue;
         else if (code == 5){
             flag = 0;
-            printf("A sair do jogo\n");
         }
         sendmsg = sendmsg + '\n';
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
@@ -196,34 +193,29 @@ int main() {
             if (fd_tcp < 0) {
                 return 1;
             }
-            printf("entrou no tcp\n");
             if ((n = send_tcp_player(fd_tcp,csendmsg)) < 0) {
                 printf("erro a enviar a mensagem");
                 freeaddrinfo(infoaddr);
+                freeaddrinfo(infoaddr_tcp);
                 close(fd_tcp);
+                close(fd);
                 return 1;
             }
             // Recebe mensagem
-            string fullmsg = "";
-            //how tf do we make this work for the entire message
             n = receive_tcp_player(fd_tcp, buffer, TCP_BUFFER_SIZE);    
             if (n < 0) {
                 printf("erro a receber a mensagem");
                 freeaddrinfo(infoaddr);
                 close(fd_tcp);
+                close(fd);
+                freeaddrinfo(infoaddr_tcp);
                 return 1;
             } else if (n == 0) 
                 cout << "No message received." << endl;
             else
                 case_server(buffer, code, sendmsg);
-            
-
             close(fd_tcp);
-            printf("saiu do case server tcp\n");
-            
-
         } else { //mensagem por udp
-            printf("entrou no udp\n");
             if (send_socket_udp_player(fd, csendmsg , infoaddr) < 0)   {
                 freeaddrinfo(infoaddr);
                 close(fd);
@@ -243,10 +235,10 @@ int main() {
             }
 
         }
-        // Imprime a mensagem recebida
-        memset(buffer, 0, n);
     }   
     // Limpeza
+    
+    freeaddrinfo(infoaddr_tcp);
     freeaddrinfo(infoaddr);
     close(fd);
     printf("A sair do jogo\n");

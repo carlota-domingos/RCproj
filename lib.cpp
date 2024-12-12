@@ -317,8 +317,7 @@ int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr) {
         close(fd);
         exit(1);
     }
-
-    freeaddrinfo(infoaddr); // Free the address info after successful connection
+    // Free the address info after successful connection
     return fd;
 }
 
@@ -333,7 +332,6 @@ int send_tcp_player(int fd, const char *message) {
         }
         size -= n;
     }
-    printf("Mensagem enviada\n");
     return 0;
 }
 
