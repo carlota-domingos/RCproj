@@ -163,6 +163,7 @@ int main() {
     struct addrinfo *infoaddr_tcp = nullptr;
     //struct addrinfo *infoaddr_tcp = nullptr; // Ponteiro para guardar informações do endereço
     char buffer[BUFFER_SIZE];
+    char buffer_tcp[TCP_BUFFER_SIZE];
     string sendmsg;  
     int code;
     int n=0;
@@ -191,9 +192,12 @@ int main() {
         if (code == 0 || code == 3){ //mensagem por tcp
             int fd_tcp = init_tcp_player("193.136.138.142", infoaddr_tcp);
             if (fd_tcp < 0) {
+                freeaddrinfo(infoaddr_tcp);
+                freeaddrinfo(infoaddr);
+                close(fd);
                 return 1;
             }
-            if ((n = send_tcp_player(fd_tcp,csendmsg)) < 0) {
+            if ((n = send_tcp_player(fd_tcp, csendmsg)) < 0) {
                 printf("erro a enviar a mensagem");
                 freeaddrinfo(infoaddr);
                 freeaddrinfo(infoaddr_tcp);
@@ -202,7 +206,8 @@ int main() {
                 return 1;
             }
             // Recebe mensagem
-            n = receive_tcp_player(fd_tcp, buffer, TCP_BUFFER_SIZE);    
+            n = receive_tcp_player(fd_tcp, buffer_tcp, TCP_BUFFER_SIZE);
+
             if (n < 0) {
                 printf("erro a receber a mensagem");
                 freeaddrinfo(infoaddr);
@@ -210,11 +215,13 @@ int main() {
                 close(fd);
                 freeaddrinfo(infoaddr_tcp);
                 return 1;
-            } else if (n == 0) 
+            } else if (n == 0) {
                 cout << "No message received." << endl;
-            else
-                case_server(buffer, code, sendmsg);
+            } else {
+                case_server(buffer_tcp, code, sendmsg);
+            }
             close(fd_tcp);
+            freeaddrinfo(infoaddr_tcp);
         } else { //mensagem por udp
             if (send_socket_udp_player(fd, csendmsg , infoaddr) < 0)   {
                 freeaddrinfo(infoaddr);
@@ -238,7 +245,6 @@ int main() {
     }   
     // Limpeza
     
-    freeaddrinfo(infoaddr_tcp);
     freeaddrinfo(infoaddr);
     close(fd);
     printf("A sair do jogo\n");
