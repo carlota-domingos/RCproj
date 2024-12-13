@@ -102,6 +102,7 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
         } else if (buffer.substr(0, 7) == "RST FIN") {
             get_file_msg(buffer, file_out);
             cout << file_out << endl;
+            curr_game.reset();
         } else if (buffer.substr(0, 7) == "RST NOK") {
             cout << "Não existe jogos ativos ou passados do player" << endl;
         }

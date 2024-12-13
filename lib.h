@@ -21,7 +21,7 @@ using namespace std;
 
 
 void create_directories();
-void create_file(const string& directory, const string& filename);
+ofstream create_file(const string& directory, const string& filename);
 
 int get_msg(string &msg);
 int get_file_msg(string &msg, string &file_out);

@@ -34,7 +34,7 @@ void create_directories() {
     }
 }
 
-void create_file(const string& directory, const string& filename) {
+ofstream create_file(const string& directory, const string& filename) {
     string file_path = directory + "/" + filename;
 
     ofstream file(file_path);
@@ -42,6 +42,8 @@ void create_file(const string& directory, const string& filename) {
     if (!file) {
         cerr << "Erro ao criar o arquivo: " << file_path << endl;
     }
+
+    return file;
 }
 
 int code_val(const string& code) {
@@ -65,32 +67,45 @@ string rm_spaces(const string& str) {
 }
 
 int get_file_msg(string &msg, string &file_out) {
-
     istringstream stream(msg);
+    string curr;
+    string filename;
     string size;
     int count = 0;
-    while (stream >> size) {
-        if (count == 3) {
+
+    while (stream >> curr) {
+        if (count == 2) {
             break;
         }
         count++;
     }
-    if (!size.empty()) {
+
+    if (!curr.empty()) {
         try {
+            filename = curr;
+            stream >> size;
             int num_chars = stoi(size);
             size_t pos = msg.find(size);
             file_out = msg.substr(pos + size.length() + 1, num_chars);
         } catch (const invalid_argument& e) {
-            cerr << "Invalid file size " << size << endl;
+            cerr << "Invalid arguments size " << size << endl;
             return -1;
         } catch (const out_of_range& e) {
-            cerr << "Number out of range: " << size << endl;
+            cerr << "size out of range: " << size << endl;
             return -1;
         }
     } else {
         cout << "Format not correct" << endl;
         return -1;
     }
+
+    ofstream file = create_file(".", filename);
+    if (!file) {
+        return -1;
+    }
+
+    file << file_out;
+    file.close();
 
     return 0;
 }
