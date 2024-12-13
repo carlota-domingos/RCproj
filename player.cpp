@@ -25,12 +25,17 @@ class game_player {
 public:
     std::string plid;
     int nT;
+    bool active = false;
 
-    game_player(const std::string& id) : plid(id), nT(0){}
+    game_player(const std::string& id) : plid(id), nT(1), active(true){}
+
+    void finish() {
+        active = false;
+    }
 
     void reset() {
         nT = 1;
-        plid = "000000";
+        active = true;
     }
 
     void next_try() {
@@ -49,7 +54,7 @@ int add_args(string &msg, int code){
         return 0;
     }
     else if(curr_game.plid.compare("000000") == 0 && (code != 5 && code != 4)){
-        printf("Erro: não existe um jogo ativo de momento\n");
+        printf("Erro: não existe um jogador ativo de momento\n");
         msg = "";
         return -1;
     } 
@@ -118,11 +123,13 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
         if (buffer.substr(0, 6) == "RQT OK") {
             cout << "Jogo terminado com sucesso" << endl;
             cout << "Codigo: " << buffer.substr(7, 7) << endl;
-            curr_game.reset();
+            curr_game.finish();
         } else if (buffer.substr(0, 7) == "RQT NOK" && flag == 1) {
-            cout << "Nao existe jogo ativo" << endl;
-            if (curr_game.plid.compare("000000") != 0) {
-                curr_game.reset();
+            if (curr_game.active) {
+                curr_game.finish();
+                cout << "Tempo Esgotado. Jogo já foi terminado." << endl;
+            } else {   
+                cout << "Nao existe jogo ativo" << endl;
             }
         } else if (buffer.substr(0, 7) == "RQT ERR") {
             cout << "Erro ao terminar o jogo." << endl;
@@ -135,18 +142,19 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
                 cout << "Jogo Ganho !" << endl;
                 if (buffer.size() > 15)
                     cout << "Codigo: " << buffer.substr(15, 7) << endl;
-                curr_game.reset();
+                curr_game.finish();
             }
         } else if (buffer == "RTR ERR\n") {
             cout << "Argumentos inválidos" << endl;
         } else if (buffer.substr(0, 7) == "RTR ETM") {
             cout << "Tempo esgotado. Codigo: " << buffer.substr(8, 7) << endl;
-            curr_game.reset();
+            curr_game.finish();
         } else if (buffer.substr(0, 7) == "RTR ENT") {
             cout << "Numero de tentativas Esgotado. Código: " << buffer.substr(8, 7) << endl;
-            curr_game.reset();
+            curr_game.finish();
+            //dar throw de erro aqui
         } else if (buffer== "RTR NOK\n") {
-            cout << "Nao existe jogo ativo" << endl;
+            cout << "Tentativa fora de contexto." << endl;
         } else if (buffer== "RTR INV\n") {
             cout << "Erro na comunicação" << endl;
         } else if (buffer == "RTR DUP\n") {
