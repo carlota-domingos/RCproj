@@ -53,17 +53,18 @@ int add_args(string &msg, int code){
     if (code<= 2){
         return 0;
     }
-    else if(curr_game.plid.compare("000000") == 0 && (code != 5 && code != 4)){
-        printf("Erro: não existe um jogador ativo de momento\n");
-        msg = "";
-        return -1;
-    } 
-    if (code == 6) {
+    else if (code == 6) {
+        if(curr_game.active == false){
+            printf("Erro: não existe um jogo ativo de momento\n");
+            msg = "";
+            return -1;
+        } 
         size_t pos = msg.find("nT");
         if (pos != string::npos) {
             msg.replace(pos, 2, std::to_string(curr_game.nT));
         }
     }
+
     size_t pos = msg.find("PLID");
     if (pos != string::npos) {
         msg.replace(pos, 4, curr_game.plid);
