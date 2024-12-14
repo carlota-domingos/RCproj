@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define PORT "58011"
+
 #define BUFFER_SIZE 128
 #define NUM_COLORS 4
 
@@ -183,7 +183,7 @@ int get_msg(string &msg) {
 //////////////////////////////////////////---SERVER---///////////////////////////////////////////////////////////////////////////////////////////
 
 // Função para inicializar o socket
-int init_socket_server(struct addrinfo*& infoaddr) {
+int init_socket_server(struct addrinfo*& infoaddr,const char* PORT) {
     int fd_udp = socket(AF_INET, SOCK_DGRAM, 0); 
     if (fd_udp == -1) {
         perror("Erro ao criar socket");
@@ -195,7 +195,7 @@ int init_socket_server(struct addrinfo*& infoaddr) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    int errcode_udp = getaddrinfo(NULL, PORT, &hints, &infoaddr);
+    int errcode_udp = getaddrinfo(NULL,PORT , &hints, &infoaddr);
     if (errcode_udp != 0) {
         perror("Erro ao resolver endereço");
         close(fd_udp);
@@ -249,7 +249,7 @@ void generate_random_colors(char *result) {
 
 
 // Função para inicializar o socket
-int init_socket_player(const char *hostname, struct addrinfo *&infoaddr){
+int init_socket_player(const char *hostname, struct addrinfo *&infoaddr,const char* PORT) {
     int fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd_udp < 0) {
         perror("Erro ao criar socket");
@@ -301,7 +301,7 @@ int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size)
 
 
 
-int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr) {
+int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr, const char* PORT) {
     int fd;
     struct addrinfo hints;
     int errcode;
@@ -325,8 +325,10 @@ int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr) {
         exit(1);
     }
 
+     
     // Conectar ao servidor
     if (connect(fd, infoaddr->ai_addr, infoaddr->ai_addrlen) == -1) {
+        cout << PORT << endl;
         perror("connect");
         freeaddrinfo(infoaddr);
         close(fd);

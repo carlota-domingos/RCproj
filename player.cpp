@@ -168,7 +168,19 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
     return 0;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    const char* gs_ip = "193.136.138.142";
+    const char* gs_port = "58011";
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
+            gs_ip = argv[++i];
+        } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
+            gs_port = argv[++i];
+        } else {
+            cerr << "Usage: " << argv[0] << " [-n GSIP] [-p GSport]" << endl;
+            return 1;
+        }
+    }
     struct addrinfo *infoaddr = nullptr;
     struct addrinfo *infoaddr_tcp = nullptr;
     //struct addrinfo *infoaddr_tcp = nullptr; // Ponteiro para guardar informações do endereço
@@ -179,7 +191,7 @@ int main() {
     int n=0;
 
     // Inicializa o socket
-    int fd = init_socket_player("193.136.138.142", infoaddr);
+    int fd = init_socket_player(gs_ip,  infoaddr,gs_port);
     if (fd < 0) {
         return 1;
     }
@@ -200,7 +212,7 @@ int main() {
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
         
         if (code == 0 || code == 3){ //mensagem por tcp
-            int fd_tcp = init_tcp_player("193.136.138.142", infoaddr_tcp);
+            int fd_tcp = init_tcp_player(gs_ip, infoaddr_tcp, gs_port);
             if (fd_tcp < 0) {
                 freeaddrinfo(infoaddr_tcp);
                 freeaddrinfo(infoaddr);

@@ -1,4 +1,3 @@
-nao tou a conseguir por coisas no git, vou te mandar 
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,8 +12,10 @@ nao tou a conseguir por coisas no git, vou te mandar
 
 #define BUFFER_SIZE 128
 #define NUM_COLORS 4
+
+using namespace std;
 class game_player;
-std::vector<game_player> players;
+vector<game_player> players;
 int flag=0; //isto era so porque queria colocar o tcp pronto sem tar a incomodar 
     
 
@@ -22,17 +23,17 @@ int flag=0; //isto era so porque queria colocar o tcp pronto sem tar a incomodar
 
 class game_player {
 public:
-    std::string plid;   // Identificador único do jogador
+    string plid;   // Identificador único do jogador
     int time;
     int nT;             // Número de tentativas
-    std::string codigo;
+    string codigo;
     
 
-    game_player(const std::string& id, int time, int nT, const std::string& colors)
+    game_player(const string& id, int time, int nT, const string& colors)
         : plid(id), time(time), nT(nT), codigo(colors)  {}
 
     // Reseta o estado do jogador
-    void reset(const std::string& id) {
+    void reset(const string& id) {
         nT = 0;
         plid = "none";
         codigo = "none";
@@ -53,25 +54,25 @@ public:
     }
 
     // Atualiza o código do jogador
-    void update_codigo(const std::string& new_code) {
+    void update_codigo(const string& new_code) {
         codigo = new_code;
     }
 
     // Exibe informações do jogador
     void display_info() const {
-        std::cout << "Player ID: " << plid << "\n";
-        std::cout << "tempo " << time << "\n";
-        std::cout << "tentativas " << nT << "\n";
-        std::cout << "Code: " << codigo << "\n";
+        cout << "Player ID: " << plid << "\n";
+        cout << "tempo " << time << "\n";
+        cout << "tentativas " << nT << "\n";
+        cout << "Code: " << codigo << "\n";
     }
 };
 
-int init_game(const std::string& PLID, int time){
+int init_game(const string& PLID, int time){
     //checkar e ver se o plid ja esta ativo ou nao 
     //ver return dependendo do caso do erro
     char colour_code[NUM_COLORS + 1]; // +1 para o terminador nulo
     generate_random_colors(colour_code);
-    game_player new_player(PLID, time, 0, std::string(colour_code));
+    game_player new_player(PLID, time, 0, string(colour_code));
     players.emplace_back(new_player);
     new_player.display_info();
     //fazer alguma cena com o plid TAA
@@ -82,7 +83,7 @@ int init_game(const std::string& PLID, int time){
 
 }
 /* 
-int get_thread(const std::string& PLID) {
+int get_thread(const string& PLID) {
     for (size_t i = 0; i < threads_ativas; i++) {
         if (players[i].plid == PLID) {
             return players[i].thread; // Retorna o identificador da thread
@@ -92,8 +93,8 @@ int get_thread(const std::string& PLID) {
 }
 */
 
-game_player* find_player(const std::string& plid) {
-    auto it = std::find_if(players.begin(), players.end(), [&plid](const game_player& player) {
+game_player* find_player(const string& plid) {
+    auto it = find_if(players.begin(), players.end(), [&plid](const game_player& player) {
         return player.plid == plid;
     });
 
@@ -106,24 +107,24 @@ game_player* find_player(const std::string& plid) {
 
 
 int case_player(const char* buffer_received) {
-    std::string buffer(buffer_received); // Converte o buffer recebido em std::string
-    std::string PLID; // Para armazenar o PLID
-    std::string send_buffer; // Para armazenar a mensagem a enviar
-    std::cout << "Buffer recebido: '" << buffer << "'" << std::endl;
+    string buffer(buffer_received); // Converte o buffer recebido em string
+    string PLID; // Para armazenar o PLID
+    string send_buffer; // Para armazenar a mensagem a enviar
+    cout << "Buffer recebido: '" << buffer << "'" << endl;
     printf("Buffer recebido aaaaaa: %s\n", buffer.c_str());
     printf("parou");
     printf("%s\n", buffer.substr(0, 4).c_str());
     printf("Tamanho do buffer: %zu\n", buffer.size());
     // Caso SCORES
     if (buffer.compare("SSB") == 0) {
-        std::cout << "Entrou no caso SCORES" << std::endl;
+        cout << "Entrou no caso SCORES" << endl;
         flag=2; //isto era so porque queria colocar o tcp pronto sem tar a incomodar 
     
     }
     // Caso GAMES
     else if (buffer.substr(0, 4).compare("STR ") == 0 && buffer.size() == 11) {
         PLID = buffer.substr(4, 6); 
-        std::cout << "Entrou no caso GAMES com PLID: " << PLID << std::endl;
+        cout << "Entrou no caso GAMES com PLID: " << PLID << endl;
         flag=2; //isto era so porque queria colocar o tcp pronto sem tar a incomodar 
     
     }
@@ -133,47 +134,47 @@ int case_player(const char* buffer_received) {
         game_player* player = find_player(PLID);
 
         if (player) {
-            std::cout << "Jogador encontrado: " << player->plid << std::endl;
+            cout << "Jogador encontrado: " << player->plid << endl;
 
             // Chamando reset para o jogador encontrado
             player->reset(player->plid);
 
-            std::cout << "Informações do jogador após reset:" << std::endl;
+            cout << "Informações do jogador após reset:" << endl;
             player->display_info();
 
             //eventualmente podemos adicionar aqui algo para mandar esta info para o ficheiro games antes de ser apagado
         } else {
-            std::cout << "Jogador com PLID " << PLID << " não encontrado." << std::endl;
+            cout << "Jogador com PLID " << PLID << " não encontrado." << endl;
         }
 
-        std::cout << "Jogador terminou o jogo " << PLID << std::endl;
+        cout << "Jogador terminou o jogo " << PLID << endl;
     }
     // Caso DEBUG 
     else if (buffer.substr(0, 4).compare("DBG ") == 0 && (buffer.size() == 14 || buffer.size() == 15)) {
         PLID = buffer.substr(4, 6);
-        std::cout << "Entrou no caso DEBUG com PLID: " << PLID << std::endl;
+        cout << "Entrou no caso DEBUG com PLID: " << PLID << endl;
     }
     // Caso TRY
     else if (buffer.substr(0, 4).compare("TRY ") == 0 && buffer.size() == 11) {
         PLID = buffer.substr(4, 6);
-        std::cout << "Entrou no caso TRY com PLID: " << PLID << std::endl;
+        cout << "Entrou no caso TRY com PLID: " << PLID << endl;
     }
     // Caso START NEW GAME && buffer.size() == 14
     else if (buffer.substr(0, 4).compare("SNG ") == 0 && (buffer.size() == 14 || buffer.size() == 15)) {
         PLID = buffer.substr(4, 6);
-        int tempo_max = std::stoi(buffer.substr(11, 3)); 
+        int tempo_max = stoi(buffer.substr(11, 3)); 
         if (tempo_max > 600) {
-            std::cout << " escede tempo_max permitido (menor de 600) " << std::endl;
+            cout << " escede tempo_max permitido (menor de 600) " << endl;
             //podemos por esta msgm a enviar em uml
             return -1;
         }     
         
-        std::cout << "Entrou no caso START NEW GAME com PLID: " << PLID 
-                  << " e tempo_max: " << tempo_max << std::endl;
+        cout << "Entrou no caso START NEW GAME com PLID: " << PLID 
+                  << " e tempo_max: " << tempo_max << endl;
         init_game(PLID, tempo_max);
     }
     else {
-        std::cerr << "Mensagem inválida ou Player deu Quit" << std::endl;
+        cerr << "Mensagem inválida ou Player deu Quit" << endl;
         return -1; // Indica erro
     }
     return 0; // Sucesso
@@ -181,7 +182,21 @@ int case_player(const char* buffer_received) {
 
 
 
-int main() {
+int main(int argc, char* argv[]) {
+    const char* gs_port = "58081"; // Default port number
+    bool verbose = false; // Default verbose mode
+
+    // Parse command-line arguments
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
+            gs_port = argv[++i];
+        } else if (strcmp(argv[i], "-v") == 0) {
+            verbose = true;
+        } else {
+            cerr << "Usage: " << argv[0] << " [-p GSport] [-v]" << endl;
+            return 1;
+        }
+    }
     struct addrinfo* infoaddr = nullptr;
     struct sockaddr_in addr_udp;
     struct sockaddr_in addr_tcp;
@@ -190,7 +205,7 @@ int main() {
     char buffer[BUFFER_SIZE];
 
     // Inicializa o servidor UDP
-    int fd_udp = init_socket_server(infoaddr);
+    int fd_udp = init_socket_server(infoaddr, gs_port);
     if (fd_udp < 0) {
         return 1;
     }
@@ -209,14 +224,14 @@ int main() {
 
         if (flag ==2){
             // Inicializa o servidor TCP 
-            int fd_tcp = init_tcp_server(PORT);
+            int fd_tcp = init_tcp_server(gs_port);
             if (fd_tcp < 0) {
                 freeaddrinfo(infoaddr);
                 close(fd_udp);
                 return 1;
             }
 
-            std::cout << "Servidor TCP e UDP inicializados com sucesso. Aguardando conexões..." << std::endl;
+            cout << "Servidor TCP e UDP inicializados com sucesso. Aguardando conexões..." << endl;
 
             // Aceitar conexão TCP
             if ((accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp)) < 0) {
@@ -226,7 +241,7 @@ int main() {
                 return 1;
             }
 
-            std::cout << "Cliente TCP conectado." << std::endl;
+            cout << "Cliente TCP conectado." << endl;
 
             // Aceitar conexão TCP
             if ((accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp)) < 0) {
@@ -236,19 +251,19 @@ int main() {
                 return 1;
             }
 
-            std::cout << "Cliente TCP conectado." << std::endl;
+            cout << "Cliente TCP conectado." << endl;
 
             // Recebe mensagem TCP
             ssize_t n_tcp = read_message_tcp_server(fd_tcp, buffer, BUFFER_SIZE);
             if (n_tcp == 0) { // Cliente desconectou
-                std::cout << "Cliente TCP desconectou." << std::endl;
+                cout << "Cliente TCP desconectou." << endl;
                 break;
             } else if (n_tcp == -1) {
                 perror("Erro ao receber mensagem TCP");
                 break;
             }
 
-            std::cout << "Mensagem TCP recebida: " << std::string(buffer, n_tcp) << std::endl;
+            cout << "Mensagem TCP recebida: " << string(buffer, n_tcp) << endl;
 
             // Envia resposta TCP
             echo_message_tcp_player(fd_tcp, "Resposta TCP", 12);
@@ -263,11 +278,11 @@ int main() {
                 break;
             }
 
-            std::cout << "Mensagem UDP recebida: " << std::string(buffer, n_udp) << std::endl;
+            cout << "Mensagem UDP recebida: " << string(buffer, n_udp) << endl;
 
             // Processa mensagem UDP
             if (case_player(buffer) != 0) {
-                std::cerr << "Erro ao processar o buffer UDP!" << std::endl;
+                cerr << "Erro ao processar o buffer UDP!" << endl;
             }
 
             // Envia resposta UDP
@@ -283,6 +298,6 @@ int main() {
 
     // Liberação de recursos
     freeaddrinfo(infoaddr);
-    close(fd_udp);
-    return 0;
+    close(fd_udp);  
+    return 0;
 }
