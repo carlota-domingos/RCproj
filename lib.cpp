@@ -297,10 +297,6 @@ int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size)
 }
 
 
-
-
-
-
 int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr, const char* PORT) {
     int fd;
     struct addrinfo hints;

@@ -137,8 +137,15 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
         }
     } else if (buffer.substr(0, 3) == "RTR") {
         if (buffer.substr(0, 6) == "RTR OK") {
-            curr_game.next_try();
+            cout << "Tentativa numero " << curr_game.nT << endl;
             cout << "nB: " << buffer.substr(9, 1) << " nW: " << buffer.substr(11, 1) << endl;
+            try{    
+                if (std::stoi(buffer.substr(7, 1)) == curr_game.nT) {
+                    curr_game.next_try();
+                }
+            } catch (const std::exception& e) {
+                cout << "Erro ao converter o numero de tentativas" << endl;
+            }
             if (buffer.substr(9, 1) == "4") {
                 cout << "Jogo Ganho !" << endl;
                 if (buffer.size() > 15)
@@ -157,7 +164,7 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
         } else if (buffer== "RTR NOK\n") {
             cout << "Tentativa fora de contexto." << endl;
         } else if (buffer== "RTR INV\n") {
-            cout << "Erro na comunicação" << endl;
+            cout << "Erro na comunicação " << endl;
         } else if (buffer == "RTR DUP\n") {
             cout << "Tentativa duplicada" << endl;
         }
@@ -170,7 +177,7 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
 
 int main(int argc, char* argv[]) {
     const char* gs_ip = "193.136.138.142";
-    const char* gs_port = "58011";
+    const char* gs_port = "58081";
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
             gs_ip = argv[++i];
@@ -183,7 +190,6 @@ int main(int argc, char* argv[]) {
     }
     struct addrinfo *infoaddr = nullptr;
     struct addrinfo *infoaddr_tcp = nullptr;
-    //struct addrinfo *infoaddr_tcp = nullptr; // Ponteiro para guardar informações do endereço
     char buffer[BUFFER_SIZE];
     char buffer_tcp[TCP_BUFFER_SIZE];
     string sendmsg;  
@@ -203,14 +209,16 @@ int main(int argc, char* argv[]) {
             return -1;
         } 
 
-        if((code= case_terminal(sendmsg)) == -1 || add_args(sendmsg, code) == -1)
+        if((code= case_terminal(sendmsg)) == -1 || add_args(sendmsg, code) == -1){
             continue;
+            
+        }            
         else if (code == 5){
             flag = 0;
         }
         sendmsg = sendmsg + '\n';
         const char* csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
-        
+        printf("Mensagem enviada: %s\n", csendmsg);
         if (code == 0 || code == 3){ //mensagem por tcp
             int fd_tcp = init_tcp_player(gs_ip, infoaddr_tcp, gs_port);
             if (fd_tcp < 0) {
@@ -262,8 +270,9 @@ int main(int argc, char* argv[]) {
             } else {
                 case_server(buffer, code, sendmsg);
             }
-
         }
+        
+        sendmsg = "";
     }   
     // Limpeza
     

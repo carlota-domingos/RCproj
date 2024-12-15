@@ -27,11 +27,18 @@ public:
     int time;
     int nT;             // Número de tentativas
     string codigo;
+    bool ativo = false;
+
+    game_player(const string& id)
+        : plid(id), ativo(false) {}
+
+    void start_game(int tempo, string& cores) {
+        time = tempo;
+        ativo = true;
+        nT = 0;
+        codigo = cores;
+    }
     
-
-    game_player(const string& id, int time, int nT, const string& colors)
-        : plid(id), time(time), nT(nT), codigo(colors)  {}
-
     // Reseta o estado do jogador
     void reset(const string& id) {
         nT = 0;
@@ -43,10 +50,7 @@ public:
     // Incrementa o número de tentativas
     void next_try() {
         nT++;
-    }
-
-
-   
+    }   
 
     // Verifica se o número de tentativas coincide com o do servidor
     bool same_try(int server_try) const {
@@ -58,6 +62,11 @@ public:
         codigo = new_code;
     }
 
+    void finish() {
+        ativo = false;
+        time = 0;
+    }
+
     // Exibe informações do jogador
     void display_info() const {
         cout << "Player ID: " << plid << "\n";
@@ -66,32 +75,6 @@ public:
         cout << "Code: " << codigo << "\n";
     }
 };
-
-int init_game(const string& PLID, int time){
-    //checkar e ver se o plid ja esta ativo ou nao 
-    //ver return dependendo do caso do erro
-    char colour_code[NUM_COLORS + 1]; // +1 para o terminador nulo
-    generate_random_colors(colour_code);
-    game_player new_player(PLID, time, 0, string(colour_code));
-    players.emplace_back(new_player);
-    new_player.display_info();
-    //fazer alguma cena com o plid TAA
-    //iniciar o timer com o time 
-    //criar codigo cores e somehow liga lo ao plid  TAA
-    //mandar msgm a avisar q ta tudo pronto
-    return 0;
-
-}
-/* 
-int get_thread(const string& PLID) {
-    for (size_t i = 0; i < threads_ativas; i++) {
-        if (players[i].plid == PLID) {
-            return players[i].thread; // Retorna o identificador da thread
-        }
-    }
-    return -1; // Retorna -1 se o jogador não for encontrado
-}
-*/
 
 game_player* find_player(const string& plid) {
     auto it = find_if(players.begin(), players.end(), [&plid](const game_player& player) {
@@ -104,6 +87,62 @@ game_player* find_player(const string& plid) {
     return nullptr; // Retorna nullptr se não encontrar o jogador
 }
 
+int init_game(const string& PLID, int time){
+    game_player* player = find_player(PLID);
+    if (player && player->ativo) {
+        cout << "Jogador com PLID " << PLID << " já está ativo." << endl;
+        return 1;
+    }
+    cout << "Entrou no caso START NEW GAME com PLID: " << PLID 
+                << " e tempo_max: " << time << endl;
+    char colour_code[NUM_COLORS + 1]; // +1 para o terminador nulo
+    generate_random_colors(colour_code);
+    game_player new_player(PLID);
+    string colour_code_str(colour_code);
+    new_player.start_game(time,colour_code_str);
+    players.emplace_back(new_player);
+    new_player.display_info();
+
+    //fazer alguma cena com o plid TAA
+    //iniciar o timer com o time 
+    //criar codigo cores e somehow liga lo ao plid  TAA
+    //mandar msgm a avisar q ta tudo pronto
+    return 0;
+
+}
+
+int init_game(const string& PLID, int time, string& code){
+    game_player* player = find_player(PLID);
+    if (player && player->ativo) {
+        cout << "Jogador com PLID " << PLID << " já está ativo." << endl;
+        return 1;
+    }
+    cout << "Entrou no caso START NEW GAME com PLID: " << PLID 
+                << " e tempo_max: " << time << endl;
+    game_player new_player(PLID);
+    new_player.start_game(time,code);
+    players.emplace_back(new_player);
+    new_player.display_info();
+
+    //fazer alguma cena com o plid TAA
+    //iniciar o timer com o time 
+    //criar codigo cores e somehow liga lo ao plid  TAA
+    //mandar msgm a avisar q ta tudo pronto
+    return 0;
+}
+/* 
+int get_thread(const string& PLID) {
+    for (size_t i = 0; i < threads_ativas; i++) {
+        if (players[i].plid == PLID) {
+            return players[i].thread; // Retorna o identificador da thread
+        }
+    }
+    return -1; // Retorna -1 se o jogador não for encontrado
+}
+*/
+
+
+
 
 
 int case_player(const char* buffer_received) {
@@ -111,67 +150,122 @@ int case_player(const char* buffer_received) {
     string PLID; // Para armazenar o PLID
     string send_buffer; // Para armazenar a mensagem a enviar
     cout << "Buffer recebido: '" << buffer << "'" << endl;
-    printf("Buffer recebido aaaaaa: %s\n", buffer.c_str());
-    printf("parou");
-    printf("%s\n", buffer.substr(0, 4).c_str());
     printf("Tamanho do buffer: %zu\n", buffer.size());
     // Caso SCORES
-    if (buffer.compare("SSB") == 0) {
+    if (buffer.compare("SSB\n") == 0) {
         cout << "Entrou no caso SCORES" << endl;
-        flag=2; //isto era so porque queria colocar o tcp pronto sem tar a incomodar 
-    
+        //checkar se vazia a diretoria de scores
+        //se vazia dar reply com EMPTY
     }
     // Caso GAMES
-    else if (buffer.substr(0, 4).compare("STR ") == 0 && buffer.size() == 11) {
-        PLID = buffer.substr(4, 6); 
-        cout << "Entrou no caso GAMES com PLID: " << PLID << endl;
-        flag=2; //isto era so porque queria colocar o tcp pronto sem tar a incomodar 
+    else if (buffer.substr(0, 4).compare("STR ") == 0) {
+        regex pattern("^STR (\\d{6})\n$");
+        smatch matches;
+        if (regex_match(buffer, matches, pattern)) {
+            game_player* player = find_player(PLID);
+            if (player) {
+                if (player->ativo) {
+                    cout << "Jogador com PLID " << PLID << " está ativo." << endl;
+                    send_buffer = "RST OK ";
+                    //eventualmente podemos adicionar aqui algo para mandar esta info para o ficheiro games antes de ser apagado
+                } else {
+                    cout << "Jogador com PLID " << PLID << " nao está ativo." << endl;
+                    send buffer = "RST FIN ";
+                }
+                //eventualmente podemos adicionar aqui algo para mandar esta info para o ficheiro games antes de ser apagado
+            } else {
+                cout << "Jogador com PLID " << PLID << " não encontrado." << endl;
+                send_buffer = "RST NOK\n";
+            }
+        } else {
+            cout << "Sintaxe do PLID inválida." << endl;
+            send_buffer = "RST NOK\n";
+        }
     
     }
     // Caso QUIT da resert as infos sobre este player
-    else if (buffer.substr(0, 4).compare("QUT ") == 0 && buffer.size() == 11) {
-        PLID = buffer.substr(4, 6);
-        game_player* player = find_player(PLID);
-
-        if (player) {
-            cout << "Jogador encontrado: " << player->plid << endl;
-
-            // Chamando reset para o jogador encontrado
-            player->reset(player->plid);
-
-            cout << "Informações do jogador após reset:" << endl;
-            player->display_info();
-
-            //eventualmente podemos adicionar aqui algo para mandar esta info para o ficheiro games antes de ser apagado
+    else if (buffer.substr(0, 4).compare("QUT ") == 0) {
+        regex pattern("^QUT (\\d{6})\n$");
+        smatch matches;
+        if (regex_match(buffer, matches, pattern)) {
+            game_player* player = find_player(PLID);
+            if (player) {
+                if (player->ativo) {
+                    cout << "Jogador com PLID " << PLID << " está ativo." << endl;
+                    send_buffer = "RQT OK "+ player->codigo + "\n";
+                    player->finish(player->plid);
+                    //eventualmente podemos adicionar aqui algo para mandar esta info para o ficheiro games antes de ser apagado
+                } else {
+                    cout << "Jogador com PLID " << PLID << " não está ativo." << endl;
+                    send_buffer = "RQT NOK\n"
+                }
+                cout << "Informações do jogador após reset:" << endl;
+                player->display_info();
+                //eventualmente podemos adicionar aqui algo para mandar esta info para o ficheiro games antes de ser apagado
+            } else {
+                cout << "Jogador com PLID " << PLID << " não encontrado." << endl;
+                send_buffer = "RQT NOK\n";
+            }
         } else {
-            cout << "Jogador com PLID " << PLID << " não encontrado." << endl;
+            cout << "Sintaxe do PLID inválida." << endl;
+            send_buffer = "RQT ERR\n";
         }
-
-        cout << "Jogador terminou o jogo " << PLID << endl;
     }
     // Caso DEBUG 
-    else if (buffer.substr(0, 4).compare("DBG ") == 0 && (buffer.size() == 14 || buffer.size() == 15)) {
-        PLID = buffer.substr(4, 6);
-        cout << "Entrou no caso DEBUG com PLID: " << PLID << endl;
+    else if (buffer.substr(0, 4).compare("DBG ") == 0) {
+        regex pattern("^DBG (\\d{6}) (\\d{1,3}) (.*)\n$");
+        smatch matches;
+        int tempo_max;
+        if (regex_match(buffer, matches, pattern)) {
+            string PLID  = matches[1];
+            string time = matches[2];
+            string code = matches[3];
+            if (!valid_time(time) || !code_val(code)) {
+                cout << "Tempo ou código inválido" << endl;
+                send_buffer = "DBG ERR\n";
+            } else {
+                tempo_max = stoi(time);
+            }
+            if (init_game(PLID, tempo_max, code) == 1) {
+                send_buffer = "DBG NOK\n";
+            } else {
+                send_buffer = "DBG OK\n";
+            }
+        } else {
+            cout << "Sintaxe Invalida" << endl;
+            send_buffer = "DBG ERR\n";
+        }
     }
     // Caso TRY
     else if (buffer.substr(0, 4).compare("TRY ") == 0 && buffer.size() == 11) {
+        
         PLID = buffer.substr(4, 6);
         cout << "Entrou no caso TRY com PLID: " << PLID << endl;
     }
     // Caso START NEW GAME && buffer.size() == 14
     else if (buffer.substr(0, 4).compare("SNG ") == 0 && (buffer.size() == 14 || buffer.size() == 15)) {
-        PLID = buffer.substr(4, 6);
-        int tempo_max = stoi(buffer.substr(11, 3)); 
-        if (tempo_max > 600) {
-            cout << " escede tempo_max permitido (menor de 600) " << endl;
-            //podemos por esta msgm a enviar em uml
-            return -1;
-        }     
-        
-        cout << "Entrou no caso START NEW GAME com PLID: " << PLID 
-                  << " e tempo_max: " << tempo_max << endl;
-        init_game(PLID, tempo_max);
+        regex pattern("^SNG (\\d{6}) (\\d{1,3})\n$");
+        smatch matches;
+        int tempo_max;
+        if (regex_match(buffer, matches, pattern)) {
+            printf("Entrou no caso START NEW GAME\n");
+            PLID  = matches[1];
+            string tempo = matches[2];
+            if (!valid_time(tempo)) {
+                cout << "Tempo máximo inválido" << endl;
+                send_buffer = "SNG ERR\n";
+            } else {
+                tempo_max = stoi(tempo);
+            }
+        }  else {
+            cout << "PLID inválido" << endl;
+            send_buffer = "SNG ERR\n";
+        }        
+        if (init_game(PLID, tempo_max) == 1) {
+            send_buffer = "SNG NOK\n";
+        } else {
+            send_buffer = "SNG OK\n";
+        }
     }
     else {
         cerr << "Mensagem inválida ou Player deu Quit" << endl;
@@ -180,12 +274,7 @@ int case_player(const char* buffer_received) {
     return 0; // Sucesso
 }
 
-
-
-int main(int argc, char* argv[]) {
-    const char* gs_port = "58081"; // Default port number
-    bool verbose = false; // Default verbose mode
-
+int validate_args(int argc, char* argv[], const char*& gs_port, bool& verbose) {
     // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
@@ -197,13 +286,23 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
+    return 0;
+}
+
+
+int main(int argc, char* argv[]) {
+    const char* gs_port = "58081"; // Default port number
+    bool verbose = false; // Default verbose mode
+    if (validate_args(argc, argv, gs_port, verbose) != 0) {
+        return 1;
+    }
+    create_directories();
     struct addrinfo* infoaddr = nullptr;
     struct sockaddr_in addr_udp;
     struct sockaddr_in addr_tcp;
     socklen_t addrlen_udp = sizeof(addr_udp);
     socklen_t addrlen_tcp = sizeof(addr_tcp);
-    char buffer[BUFFER_SIZE];
-
+   
     // Inicializa o servidor UDP
     int fd_udp = init_socket_server(infoaddr, gs_port);
     if (fd_udp < 0) {
@@ -216,88 +315,87 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    
+    int fd_tcp = init_tcp_server(gs_port);
+    if (fd_tcp < 0) {
+        close(fd_udp);
+        return 1;
+    }
 
-    // Loop de recepção e envio de mensagens UDP e TCP
-    while (true) {
-        // Recebe mensagem UDP
+    fd_set read_fds;
+    vector<int> client_fds;
+    int max_fd = max(fd_udp, fd_tcp);
 
-        if (flag ==2){
-            // Inicializa o servidor TCP 
-            int fd_tcp = init_tcp_server(gs_port);
-            if (fd_tcp < 0) {
-                freeaddrinfo(infoaddr);
-                close(fd_udp);
-                return 1;
-            }
+    while (true) { 
+        char* buffer = (char*)malloc(BUFFER_SIZE);
+        FD_ZERO(&read_fds);
+        FD_SET(fd_udp, &read_fds);
+        FD_SET(fd_tcp, &read_fds);
 
-            cout << "Servidor TCP e UDP inicializados com sucesso. Aguardando conexões..." << endl;
 
-            // Aceitar conexão TCP
-            if ((accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp)) < 0) {
-                freeaddrinfo(infoaddr);
-                close(fd_udp);
-                close(fd_tcp);
-                return 1;
-            }
-
-            cout << "Cliente TCP conectado." << endl;
-
-            // Aceitar conexão TCP
-            if ((accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp)) < 0) {
-                freeaddrinfo(infoaddr);
-                close(fd_udp);
-                close(fd_tcp);
-                return 1;
-            }
-
-            cout << "Cliente TCP conectado." << endl;
-
-            // Recebe mensagem TCP
-            ssize_t n_tcp = read_message_tcp_server(fd_tcp, buffer, BUFFER_SIZE);
-            if (n_tcp == 0) { // Cliente desconectou
-                cout << "Cliente TCP desconectou." << endl;
-                break;
-            } else if (n_tcp == -1) {
-                perror("Erro ao receber mensagem TCP");
-                break;
-            }
-
-            cout << "Mensagem TCP recebida: " << string(buffer, n_tcp) << endl;
-
-            // Envia resposta TCP
-            echo_message_tcp_player(fd_tcp, "Resposta TCP", 12);
-            close(fd_tcp);
-            flag =0;
-
+        max_fd = fd_udp > fd_tcp ? fd_udp : fd_tcp;
+        int activity = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+        if (activity < 0) {
+            perror("select");
+            free(buffer);
+            break;
         }
-        else{ 
+
+        
+        if (FD_ISSET(fd_udp, &read_fds)) {
+            struct sockaddr_in addr_udp;
+            socklen_t addrlen_udp = sizeof(addr_udp);
             ssize_t n_udp = receive_message_server(fd_udp, buffer, BUFFER_SIZE, addr_udp, addrlen_udp);
             if (n_udp == -1) {
                 perror("Erro ao receber mensagem UDP");
+                free(buffer);
                 break;
             }
-
             cout << "Mensagem UDP recebida: " << string(buffer, n_udp) << endl;
-
             // Processa mensagem UDP
             if (case_player(buffer) != 0) {
                 cerr << "Erro ao processar o buffer UDP!" << endl;
             }
-
             // Envia resposta UDP
             if (send_message_server(fd_udp, "Resposta UDP", 12, addr_udp, addrlen_udp) < 0) {
                 perror("Erro ao enviar mensagem UDP");
+                free(buffer);
                 break;
             }
+            continue;
+        }
 
-        }        
+        if (FD_ISSET(fd_tcp, &read_fds)) {
+            struct sockaddr_in addr_tcp;
+            socklen_t addrlen_tcp = sizeof(addr_tcp);
+            int client_fd = accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp);
+            if (client_fd >= 0) {
+                printf("Conneccao aceite com fd: %d\n", client_fd);
+                client_fds.push_back(client_fd);
+                max_fd = max(max_fd, client_fd); // Update max_fd
+            }
+            ssize_t n_tcp = read_message_tcp_server(client_fd, buffer, BUFFER_SIZE);
+            if (n_tcp == 0) { // Cliente desconectou
+                cout << "Cliente TCP desconectou." << endl;
+                close(client_fd);
+            } else if (n_tcp == -1) {
+                perror("Erro ao receber mensagem TCP");
+                close(client_fd);
+            } else {
+                cout << "Mensagem TCP recebida: " << string(buffer, n_tcp) << endl;
+                if (case_player(buffer) != 0) {
+                    cerr << "Mensagem TCP invalida!" << endl;
+                    echo_message_tcp_player(client_fd, "ERR", 3);
+                }
+                echo_message_tcp_player(client_fd, "Resposta TCP", 12);
 
-        
+            }
+            close(client_fd);
+        }
+        free(buffer);
     }
+    
+    close(fd_tcp);
+    close(fd_udp);
 
-    // Liberação de recursos
-    freeaddrinfo(infoaddr);
-    close(fd_udp);  
     return 0;
 }
