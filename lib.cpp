@@ -429,10 +429,11 @@ ssize_t read_message_tcp_server(int client_fd, char *buffer, size_t size) {
     return n;
 }
 
-void echo_message_tcp_player(int client_fd, const char *message, ssize_t size) {
+int echo_message_tcp_player(int client_fd, const char *message, ssize_t size) {
     ssize_t n = write(client_fd, message, size);
     if (n == -1) {
         perror("write");
-        exit(1);
+        return -1;
     }
+    return 0;
 }

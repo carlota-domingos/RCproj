@@ -43,7 +43,7 @@ ssize_t receive_tcp_player(int fd, char *buffer, size_t size);
 int init_tcp_server(const char* PORT);
 int accept_connection_tcp_server(int server_fd, struct sockaddr_in *addr, socklen_t *addrlen);
 ssize_t read_message_tcp_server(int client_fd, char *buffer, size_t size);
-void echo_message_tcp_player(int client_fd, const char *message, ssize_t size);
+int echo_message_tcp_player(int client_fd, const char *message, ssize_t size);
 
 
 #endif
