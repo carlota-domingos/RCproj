@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include "lib.h"
 #include <filesystem>
+#include <ctime>
 
 #define BUFFER_SIZE_GS 1024
 #define NUM_COLORS 4
@@ -17,10 +18,6 @@
 using namespace std;
 class game_player;
 vector<game_player> players;
-int flag = 0; // isto era so porque queria colocar o tcp pronto sem tar a incomodar
-
-
-
 
 void match_code(const string &code1, const string &code2, int &nW, int &nB)
 {
@@ -46,6 +43,59 @@ void match_code(const string &code1, const string &code2, int &nW, int &nB)
     }
 }
 
+
+string get_str_time(time_t time, int mode) {
+    char buffer[20];  // Buffer for the date and time in YYYY-MM-DD HH:MM:SS format
+    struct tm *timeinfo;
+    if (mode == 0) {
+        timeinfo = localtime(&time);
+    } else {
+        timeinfo = gmtime(&time);
+    }
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
+    return string(buffer);
+}
+
+class game_file {
+public:
+    string plid;       // Identificador único do jogador
+    int fd_game;       // File descriptor do ficheiro
+    time_t time_init;
+    string mode;  // Tempo de referência para calcular o tempo das jogadas
+
+    game_file(const string &id, string &mode, const string &code, string &timeout) {
+        plid=id;
+        time_init=time(0);
+        mode= mode;
+        string name= "GAMES_"+ id + ".txt";
+        //open
+        //string firstline = plid + " " + mode + " " + code + " " + timeout + " " + get_str_time(time_init,0) + " "+ string(time_init) + "\n";
+    }
+
+    void new_line(string &code, int nb, int nw) {
+        time_t game_time = time(0) - time_init;
+        string time_str = to_string(game_time);
+        string line = "T: " + code + " " + to_string(nb) + " " + to_string(nw) + " " + time_str + "\n";
+        //Assuming fd_game is a valid file descriptor and write is a valid function
+        write(fd_game, line.c_str(), line.size());
+    }
+    void finish_game(time_t finishtime, string term, string score, int nT){
+        //time_t game_time = finishtime - time_init;
+        // string last_line = get_str_time(finishtime,0) + " " + string(game_time)+ "\n";
+        string new_fn = get_str_time(finishtime,1)+"_"+term+ ".txt";
+        if (term =="W"){
+            string score_fn= score+"_"+ plid+"_"+get_str_time(finishtime,1)+".txt";
+            //enviar isto e gerar priemira linha i guess
+        }
+    }
+    // Exibe informações do arquivo de jogo
+    void display_info() const {
+        cout << "Player ID: " << plid << "\n";
+        cout << "File Descriptor: " << fd_game << "\n";
+        cout << "Time Init: " << time_init << "\n";
+    }
+
+} ;
 class game_player
 {
 public:
@@ -55,6 +105,7 @@ public:
     string codigo = ""; // acts to know if a timeout or finished msg has been sent
     bool ativo = false;
     int fd_game;
+    int score;
 
     game_player(const string &id)
         : plid(id), ativo(false) {}
@@ -209,9 +260,8 @@ int get_thread(const string& PLID) {
 }
 */
 
-string process_player(game_player *player, string &code, int nT )
+void process_player(game_player *player, string &code, int nT, string& send_buffer)
 {
-    string send_buffer = string(BUFFER_SIZE_GS, '\0');
     if (player)
     {
         if (player->ativo)
@@ -225,7 +275,7 @@ string process_player(game_player *player, string &code, int nT )
                 {
                     cout << "Tentiva duplicada." << endl;
                     send_buffer = "RTR DUP\n";
-                    return send_buffer;
+                    return;
                 }
                 match_code(player->codigo, code, nW, nB);
                 cout << "nW: " << nW << " nB: " << nB << endl;
@@ -234,26 +284,25 @@ string process_player(game_player *player, string &code, int nT )
                     cout << "Tempo esgotado para o jogador" << endl;
                     send_buffer = "RTR ENT " + player->codigo + "\n";
                     player->finish();
-                    return send_buffer;
+                    return;
                 }
                 else if (nB == NUM_COLORS)
                 {
                     cout << "Jogador com PLID " << player->plid << " acertou no código." << endl;
                     send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW) + player->codigo + "\n";
                     player->finish();
-                    return send_buffer;
+                    return;
                 }
                 player->next_try();
                 send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW) + "\n";
-                cout << send_buffer << endl;
-                return send_buffer;
+                return;
                 
             }
             else
             {
                 cout << "Número de tentativas inválido" << endl;
                 send_buffer = "RTR INV\n";
-                return send_buffer;
+                return;
             }
         }
         else
@@ -264,7 +313,7 @@ string process_player(game_player *player, string &code, int nT )
                 printf("codigo vazio");
                 cout << "Jogador com PLID " << player->plid << " não está ativo." << endl;
                 send_buffer = "RTR NOK\n";
-                return send_buffer;
+                return;
             }
             else
             {
@@ -272,7 +321,7 @@ string process_player(game_player *player, string &code, int nT )
                 cout << "Tempo esgotado para o jogador" << endl;
                 send_buffer = "RTR ETM " + player->codigo + "\n";
                 player->finish();
-                return send_buffer;
+                return;
             }
         }
     }
@@ -280,7 +329,7 @@ string process_player(game_player *player, string &code, int nT )
     {
         cout << "Jogador não encontrado." << endl;
         send_buffer = "RTR NOK\n";
-        return send_buffer;
+        return;
     }
 }
 
@@ -293,8 +342,8 @@ int case_player(string &buffer, string &send_buffer)
     if (buffer.compare("SSB\n") == 0)
     {
         cout << "Entrou no caso SCORES" << endl;
-        // checkar se vazia a diretoria de scores
-        // se vazia dar reply com EMPTY
+        send_buffer = "RSS EMPTY\n";
+        // tambem nao funciona
     }
     // Caso GAMES
     else if (buffer.substr(0, 4).compare("STR ") == 0)
@@ -384,7 +433,7 @@ int case_player(string &buffer, string &send_buffer)
             if (!valid_time(time) || !code_val(code))
             {
                 cout << "Tempo ou código inválido" << endl;
-                send_buffer = "DBG ERR\n";
+                send_buffer = "RDB ERR\n";
             }
             else
             {
@@ -392,43 +441,20 @@ int case_player(string &buffer, string &send_buffer)
             }
             if (init_game(PLID, tempo_max, code) == 1)
             {
-                send_buffer = "DBG NOK\n";
+                send_buffer = "RDB NOK\n";
             }
             else
             {
-                send_buffer = "DBG OK\n";
+                send_buffer = "RDB OK\n";
             }
         }
         else
         {
             cout << "Sintaxe Invalida" << endl;
-            send_buffer = "DBG ERR\n";
+            send_buffer = "RDB ERR\n";
         }
     }
-    // Caso TRY
-    else if (buffer.substr(0, 4).compare("TRY ") == 0)
-    {
-        regex pattern("^TRY (\\d{6}) ([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP]) (\\d{1})\\s\n?*$");
-        smatch matches;
-        string send_buffer;
-        if (regex_match(buffer, matches, pattern))
-        {
-            PLID = matches[1];
-            string code = matches[2].str() + matches[3].str()  + matches[4].str()  + matches[5].str() + '\0';
-            cout << "Code: " << code << endl;
-            string nT = matches[6];
-            game_player *player = find_player(PLID);
-            printf("Entrou no caso TRY\n");
-            send_buffer = process_player(player, code, stoi(nT));
-            cout << "Mensagem a enviar: '" << send_buffer << "'" << endl;
-        }
-        else
-        {
-            cout << "sintaxe invalida" << endl;
-            send_buffer = "RTR ERR\n";
-        }
-    }
-    // Caso START NEW GAME && buffer.size() == 14
+    // Caso START NEW GAME
     else if (buffer.substr(0, 4).compare("SNG ") == 0)
     {
         regex pattern("^SNG (\\d{6}) (\\d{1,3})\n$");
@@ -462,6 +488,26 @@ int case_player(string &buffer, string &send_buffer)
             cout << "PLID ou tempo inválido" << endl;
             send_buffer = "RSG ERR\n";
         }
+    }// Caso TRY
+    else if (buffer.substr(0, 4).compare("TRY ") == 0)
+    {
+        regex pattern("^TRY (\\d{6}) ([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP]) (\\d{1})\\s\n?*$");
+        smatch matches;
+        if (regex_match(buffer, matches, pattern))
+        {
+            PLID = matches[1];
+            string code = matches[2].str() + matches[3].str()  + matches[4].str()  + matches[5].str() + '\0';
+            cout << "Code: " << code << endl;
+            string nT = matches[6];
+            game_player *player = find_player(PLID);
+            process_player(player, code, stoi(nT), send_buffer);
+            printf("Entrou no caso TRY\n");
+        }
+        else
+        {
+            cout << "sintaxe invalida" << endl;
+            send_buffer = "RTR ERR\n";
+        }
     }
     else
     {
@@ -469,6 +515,7 @@ int case_player(string &buffer, string &send_buffer)
         send_buffer = "ERR\n";
         return -1; // Indica erro
     }
+    cout << "ta no final " << endl;
     cout << "Mensagem a enviar: '" << send_buffer << "'" << endl;
     return 0; // Sucesso
 }
