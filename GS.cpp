@@ -7,6 +7,9 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <thread>
+#include <chrono>
+#include <atomic>
 #include "lib.h"
 #include <filesystem>
 #include <ctime>
@@ -14,15 +17,33 @@
 #define BUFFER_SIZE_GS 1024
 #define NUM_COLORS 4
 #define NUM_TRIES 8
+atomic<bool> flag_time(false);
 
 using namespace std;
 class game_player;
 vector<game_player> players;
 
+void activateFlagAfterSeconds(atomic<bool>& flag, int seconds) {
+    // Função executada em um thread separado para contar o tempo sem bloquear o restante
+    this_thread::sleep_for(chrono::seconds(seconds)); // Espera pelo tempo definido
+    flag = true; // Ativa a flag
+    cout << "Flag ativada após " << seconds << " segundos." << endl;
+}
+
+void startTimerInBackground(atomic<bool>& flag, int seconds) {
+    // Cria o thread para ativar a flag após o tempo especificado
+    thread timerThread(activateFlagAfterSeconds, ref(flag), seconds);
+    timerThread.detach(); // Desanexa o thread, permitindo que ele execute em paralelo
+    cout << "Timer iniciado em segundo plano. O servidor continua funcionando..." << endl;
+}
+
 void match_code(const string &code1, const string &code2, int &nW, int &nB)
 {
+
     nW = 0;
     nB = 0;
+    cout << "Code 1: " << code1 << endl;
+    cout << "Code 2: " << code2 << endl;
     for (int i = 0; i < NUM_COLORS; i++)
     {
         if (code1[i] == code2[i])
@@ -191,6 +212,7 @@ int init_game(const string &PLID, int time)
     {
         cout << "Entrou no caso START NEW GAME com PLID: " << PLID
             << " e tempo_max: " << time << endl;
+        startTimerInBackground(flag_time, time);
         char colour_code[NUM_COLORS + 1]; // +1 para o terminador nulo
         generate_random_colors(colour_code);
         string colour_code_str(colour_code);
@@ -204,6 +226,8 @@ int init_game(const string &PLID, int time)
     cout << "Entrou no caso START NEW GAME com PLID: " << PLID
          << " e tempo_max: " << time << endl;
     char colour_code[NUM_COLORS + 1]; // +1 para o terminador nulo
+
+    startTimerInBackground(flag_time, time);
     generate_random_colors(colour_code);
     game_player new_player(PLID);
     string colour_code_str(colour_code);
@@ -213,15 +237,11 @@ int init_game(const string &PLID, int time)
     for (auto it = players.begin(); it != players.end(); ++it) {
         cout << it->plid << " " << endl;
     }
-    // fazer alguma cena com o plid TAA
-    // iniciar o timer com o time
-    // criar codigo cores e somehow liga lo ao plid  TAA
-    // mandar msgm a avisar q ta tudo pronto
     return 0;
 }
 
 //DEBUG
-int init_game(const string &PLID, int time, string &code)
+int init_game_debug(const string &PLID, int time, string &code)
 {
     game_player *player = find_player(PLID);
     if (player && player->ativo)
@@ -439,7 +459,7 @@ int case_player(string &buffer, string &send_buffer)
             {
                 tempo_max = stoi(time);
             }
-            if (init_game(PLID, tempo_max, code) == 1)
+            if (init_game_debug(PLID, tempo_max, code) == 1)
             {
                 send_buffer = "RDB NOK\n";
             }
@@ -583,8 +603,8 @@ int main(int argc, char *argv[])
     vector<int> client_fds;
     int max_fd = max(fd_udp, fd_tcp);
 
-    while (true)
-    {
+    while (true)  {
+        
         char *buffer = (char *)malloc(BUFFER_SIZE);
 
         if (buffer == nullptr)
@@ -608,7 +628,11 @@ int main(int argc, char *argv[])
             free(buffer);
             break;
         }
-
+        if (flag_time)  {
+            cout<<"tempo acabou"<< endl;
+            //TRATAR DISTO
+            
+        }
         if (FD_ISSET(fd_udp, &read_fds))
         {
             string send_string(BUFFER_SIZE, '\0');

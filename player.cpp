@@ -146,6 +146,7 @@ int case_server(const char* buffer_received, int code, string &sendmsg) {
             } catch (const std::exception& e) {
                 cout << "Erro ao converter o numero de tentativas" << endl;
             }
+            
             if (buffer.substr(9, 1) == "4") {
                 cout << "Jogo Ganho !" << endl;
                 if (buffer.size() > 15)

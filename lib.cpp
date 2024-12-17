@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
+#include <random>
 #include <unistd.h>
 #include <regex>
 #include <string>
@@ -232,14 +233,21 @@ int send_message_server(int fd_udp, const char* buffer, size_t length, struct so
 
 //gera o codigo de coderes para o jogo
 void generate_random_colors(char *result) {
+    // Array de cores disponíveis
     char colors[] = {'R', 'G', 'B', 'Y', 'O', 'P'};
     size_t num_available_colors = sizeof(colors) / sizeof(colors[0]);
 
+    // Inicializando gerador de números aleatórios
+    std::random_device rd;          // Gerador baseado em hardware (ou fallback para entropia pseudoaleatória)
+    std::mt19937 gen(rd());         // Mersenne Twister PRNG
+    std::uniform_int_distribution<> dist(0, num_available_colors - 1); // Índices aleatórios no intervalo válido
+
+    // Gerando a sequência aleatória de cores
     for (int i = 0; i < NUM_COLORS; i++) {
-        int random_index = rand() % num_available_colors; // Escolhe um índice aleatório
-        result[i] = colors[random_index];                // Adiciona a cor à sequência
+        int random_index = dist(gen); // Gera um índice aleatório
+        result[i] = colors[random_index];
     }
-    result[NUM_COLORS] = '\0'; // Adiciona o terminador nulo para tornar a string válida
+    result[NUM_COLORS] = '\0'; // Adiciona o terminador nulo para criar uma string válida
 }
 
 
