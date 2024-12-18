@@ -1,0 +1,212 @@
+#include <stddef.h>
+#include <cstdio>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <string.h>
+#include <iostream>
+#include <fstream>
+#include <sys/stat.h>
+#include <random>
+#include <unistd.h>
+#include <regex>
+#include <string>
+#include <sstream>
+#include <filesystem>
+
+
+using namespace std;
+
+
+#define BUFFER_SIZE 128
+
+
+
+class game_player{
+public:
+    std::string plid;
+    int nT;
+    bool active = false;
+
+    game_player(const std::string &id) : plid(id), nT(1) {}
+
+    void finish()
+    {
+        active = false;
+    }
+
+    void reset()
+    {
+        nT = 1;
+        active = true;
+    }
+
+    void next_try()
+    {
+        nT++;
+    }
+
+    bool same_try(int server_try) const
+    {
+        return nT == server_try;
+    }
+};
+
+//funcao para ler do terminal
+int get_msg(string &msg) {
+    char c;
+    int i = 0;
+    char msgbuffer[BUFFER_SIZE];
+    while ((c = getchar()) != EOF && c != '\n' && i < BUFFER_SIZE - 1) {
+        msgbuffer[i] = c;
+        i++;
+    }
+    msgbuffer[i] = '\0';  
+    msg = string(msgbuffer);
+    return 0;
+}
+
+
+int get_file_msg(string &msg, string &file_out) {
+    istringstream stream(msg);
+    string curr;
+    string filename;
+    string size;
+    int count = 0;
+
+    while (stream >> curr) {
+        if (count == 2) {
+            break;
+        }
+        count++;
+    }
+
+    if (!curr.empty()) {
+        try {
+            filename = curr;
+            stream >> size;
+            int num_chars = stoi(size);
+            size_t pos = msg.find(size);
+            file_out = msg.substr(pos + size.length() + 1, num_chars);
+        } catch (const invalid_argument& e) {
+            cerr << "Invalid arguments size " << size << endl;
+            return -1;
+        } catch (const out_of_range& e) {
+            cerr << "size out of range: " << size << endl;
+            return -1;
+        }
+    } else {
+        cout << "Format not correct" << endl;
+        return -1;
+    }
+
+    ofstream file = create_file(".", filename);
+    if (!file) {
+        return -1;
+    }
+
+    file << file_out;
+    file.close();
+
+    return 0;
+}
+
+string rm_spaces(const string& str) {
+    string trimmed = regex_replace(str, regex("^\\s+|\\s+$"), "");
+    return regex_replace(trimmed, regex("\\s+"), " ");
+}
+
+
+int case_terminal(string &buffer){
+    buffer= rm_spaces(buffer);
+    if ((buffer.compare("sb"))==0 || (buffer.compare("scoreboard"))==0) {
+        buffer = "SSB";
+        return 0;
+    }
+    else if (buffer.size() > 6 && buffer.substr(0,6).compare("debug ")==0){
+        regex pattern("^debug (\\d{6}) (\\d{1,3}) (.*)$");
+        smatch matches;
+        if (regex_match(buffer, matches, pattern)) {
+            string plid  = matches[1];
+            string time = matches[2];
+            string code = matches[3];
+            if (valid_time(time) && code_val(code)) {
+                buffer ="DBG "+ plid + " " + time + " " + code;
+                return 1;
+            }
+        }
+    } 
+    else if (buffer.size() > 6 && buffer.substr(0,6).compare("start ")==0){
+        regex pattern("^start (\\d{6}) (\\d{1,3})$");
+        smatch matches;
+        if (regex_match(buffer, matches, pattern)) {
+            string plid  = matches[1];
+            string time = matches[2];
+            if (valid_time(time)) {
+                buffer= "SNG "+ plid +" "+ time;
+                return 2;
+            } 
+        }
+    }
+    else if ((buffer.compare("st"))==0 || (buffer.compare("show_trials"))==0) {
+        buffer = "STR PLID"; 
+        return 3;
+    }
+    else if ((buffer.compare("quit"))==0 ) {
+        buffer = "QUT PLID";
+        return 4;
+    }
+    else if ((buffer.compare("exit"))==0 ) {
+        buffer = "QUT PLID";
+        return 5;
+    }
+    else if (buffer.size() >= 11 && (buffer.substr(0,4).compare("try ")) ==0){
+        if (code_val(buffer.substr(4,7)) == true){
+            buffer =  "TRY PLID "+ buffer.substr(4,12) +" nT";
+            return 6;
+        }
+    }
+    printf("Erro: Mensagem introduzida nao esta de acordo com as normas\n");
+    buffer = "";
+    return -1;  
+} 
+
+int check_active_game(string &sendmsg, game_player curr_game){
+    if (curr_game.active == true)
+    {
+        printf("Erro: Existe outro jogo ativo neste momento\n");
+        sendmsg = "";
+        return 1;
+    }
+    return 0;
+}
+
+int add_args(string &msg, int code, game_player curr_game){
+    if (code <= 2)
+    {
+        return 0;
+    }
+    else if (code == 6)
+    {
+        if (curr_game.active == false)
+        {
+            printf("Erro: não existe um jogo ativo de momento\n");
+            msg = "";
+            return -1;
+        }
+        size_t pos = msg.find("nT");
+        if (pos != string::npos)
+        {
+            msg.replace(pos, 2, std::to_string(curr_game.nT));
+        }
+    }
+
+    size_t pos = msg.find("PLID");
+    if (pos != string::npos)
+    {
+        msg.replace(pos, 4, curr_game.plid);
+    }
+    return 0;
+}

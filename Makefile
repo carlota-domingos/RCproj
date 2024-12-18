@@ -10,8 +10,8 @@ SRC = GS.cpp
 # Nome do executável
 EXEC = server 
 
-gm = GAMES 
-sc = SCORES 
+gm = SERVER/GAMES 
+sc = SERVER/SCORES 
 # Regra padrão: compilar o servidor
 all: $(EXEC)
 
