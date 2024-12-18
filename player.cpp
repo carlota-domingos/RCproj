@@ -9,8 +9,6 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <fstream>
-#include <sys/stat.h>
-#include "lib.h"
 #include "libPlayer.h"
 #include "udpTcp.h"
 #include <iostream>

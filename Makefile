@@ -5,13 +5,14 @@ CXX = g++
 CXXFLAGS = -Wall -std=c++11
 
 # Arquivos fonte
-SRC = GS.cpp
+SRC = GS.cpp lib.cpp
 
 # Nome do executável
 EXEC = server 
 
 gm = SERVER/GAMES 
 sc = SERVER/SCORES 
+
 # Regra padrão: compilar o servidor
 all: $(EXEC)
 

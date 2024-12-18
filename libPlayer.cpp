@@ -68,6 +68,18 @@ int get_msg(string &msg) {
     return 0;
 }
 
+ofstream create_file(const string& directory, const string& filename) {
+    string file_path = directory + "/" + filename;
+
+    ofstream file(file_path);
+    
+    if (!file) {
+        cerr << "Erro ao criar o arquivo: " << file_path << endl;
+    }
+
+    return file;
+}
+
 
 int get_file_msg(string &msg, string &file_out) {
     istringstream stream(msg);
@@ -113,11 +125,27 @@ int get_file_msg(string &msg, string &file_out) {
     return 0;
 }
 
+bool valid_time(const string& str) {
+    try {
+        int num = stoi(str);
+        return num >= 0 && num <= 600;
+    } catch (...) {
+        return false;
+    }
+}
+
 string rm_spaces(const string& str) {
     string trimmed = regex_replace(str, regex("^\\s+|\\s+$"), "");
     return regex_replace(trimmed, regex("\\s+"), " ");
 }
 
+
+
+int code_val(const string& code) {
+    regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])");
+    
+    return regex_match(code, pattern);
+}
 
 int case_terminal(string &buffer){
     buffer= rm_spaces(buffer);
@@ -210,3 +238,5 @@ int add_args(string &msg, int code, game_player curr_game){
     }
     return 0;
 }
+
+

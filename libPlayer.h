@@ -18,17 +18,15 @@
 
 using namespace std;
 
-
-
 int get_msg(string &msg);
 int get_file_msg(string &msg, string &file_out);
-
 string rm_spaces(const string& str);
-
 int case_terminal(string &buffer);
 
 int check_active_game(string &sendmsg);
 int add_args(string &msg, int code);
+bool valid_time(const string& str);
+int code_val(const string& code);
 
 
 
