@@ -107,13 +107,13 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
         if (is_empty) {
             send_buffer = "RSS EMPTY\n";
         } else {
-            send_buffer = "RSS OK ";
+            send_buffer = "RSS OK";
             string filename;
             string file_buffer;
             format_scb(file_buffer);
             int file_size = file_buffer.size();
             filename = "SCORES_" + get_str_time(play_time, 1) + ".txt";
-            send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
+            send_buffer += filename + " " + to_string(file_size) + " " + file_buffer + "\n";
             //create file with scores
         }
         rqstype = "Scoreboard";
@@ -146,7 +146,7 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
                         string code = "RST FIN";
                         format_str(gamefilename,  file_buffer, code);
                         file_size = file_buffer.size();
-                        send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
+                        send_buffer += filename + " " + to_string(file_size) + " " + file_buffer + "\n";
                     } else{
 
                         //cout << "Jogador com PLID " << PLID << " está ativo." << endl;
@@ -154,7 +154,7 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
                         string code = "RST ACT";
                         format_str(gamefilename,  file_buffer, code);
                         file_size = file_buffer.size();
-                        send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
+                        send_buffer += filename + " " + to_string(file_size) + " " + file_buffer + "\n";
                     }
                 } else  {
                     // cout << "Jogador com PLID " << PLID << " nao está ativo." << endl;
@@ -162,7 +162,7 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
                     string code = "RST FIN";
                     format_str(gamefilename, file_buffer, code);
                     file_size = file_buffer.size();
-                    send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
+                    send_buffer += filename + " " + to_string(file_size) + " " + file_buffer +"\n";
                 }
             } else {
                 // cout << "Jogador com PLID " << PLID << " não encontrado." << endl;

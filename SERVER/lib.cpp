@@ -173,11 +173,6 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
     }
 }
 
-// Função que imprime informação
-void game_file::display_info() const {
-    // cout<< "Player ID: " << plid << "\n";
-    // cout<< "Time Init: " << time_init << "\n";
-}
 
 //-----------------------------------------------------------CLASSE GAME_PLAYER-------------------------------------------------------
 
@@ -315,8 +310,7 @@ void generate_random_colors(char *result) {
     mt19937 gen(rd());                                            
     uniform_int_distribution<> dist(0, num_available_colors - 1); 
 
-    for (int i = 0; i < NUM_COLORS; i++)
-    {
+    for (int i = 0; i < NUM_COLORS; i++)  {
         int random_index = dist(gen); 
         result[i] = colors[random_index];
     }
@@ -462,8 +456,6 @@ void match_code(const string &code1, const string &code2, int &nW, int &nB)
 {
     nW = 0;
     nB = 0;
-    // cout<< "Code 1: " << code1 << endl;
-    // cout<< "Code 2: " << code2 << endl;
     for (int i = 0; i < NUM_COLORS; i++)
     {
         if (code1[i] == code2[i])

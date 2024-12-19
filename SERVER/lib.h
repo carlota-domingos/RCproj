@@ -29,7 +29,7 @@ public:
     int get_nT_file();
     string get_str_time(time_t time, int mode);
     void finish_game(time_t finishtime, const string &term, const string &score);
-    void display_info() const;
+   
 };
 
 class game_player {
