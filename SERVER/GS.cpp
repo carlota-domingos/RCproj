@@ -298,11 +298,18 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
 }
 
 int main(int argc, char *argv[]) {
-    const char *gs_port = "58081"; 
-    bool verbose = false;          
-    if (validate_args(argc, argv, gs_port, verbose) != 0)
+    char *gs_port = (char *)malloc(6 * sizeof(char)); // Allocate memory for the port
+    if (!gs_port) {
+        cerr << "Memory allocation failed" << endl;
         return 1;
+    }
+    strcpy(gs_port, "58081"); // Copy the default port value
 
+    bool verbose = false;          
+    if (validate_args(argc, argv, gs_port, verbose) != 0) {
+        free(gs_port); // Free allocated memory before returning
+        return 1;
+    }
     create_directories();
     struct addrinfo *infoaddr = nullptr;
 
@@ -470,6 +477,7 @@ int main(int argc, char *argv[]) {
         }
         free(buffer);
     }
+    free(gs_port);
     close(fd_tcp);
     close(fd_udp);
 

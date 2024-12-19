@@ -147,20 +147,41 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
 
 // Função main do player
 int main(int argc, char *argv[]){
-    const char *gs_ip = "193.136.138.142";
-    const char *gs_port = "58081";
+    char *gs_ip = strdup("193.136.138.142");
+    char *gs_port = strdup("58081");
+
+    if (!gs_ip || !gs_port) {
+        cerr << "Memory allocation failed" << endl;
+        return 1;
+    }
+
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
-            gs_ip = argv[++i];
-        }
-        else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
-            gs_port = argv[++i];
-        }
-        else {
+            free(gs_ip); // Free previous value
+            gs_ip = strdup(argv[++i]);
+            if (!gs_ip) {
+                cerr << "Memory allocation failed" << endl;
+                free(gs_port);
+                return 1;
+            }
+        } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
+            free(gs_port); // Free previous value
+            gs_port = strdup(argv[++i]);
+            if (!gs_port) {
+                cerr << "Memory allocation failed" << endl;
+                free(gs_ip);
+                return 1;
+            }
+        } else {
             cerr << "Usage: " << argv[0] << " [-n GSIP] [-p GSport]" << endl;
+            free(gs_ip);
+            free(gs_port);
             return 1;
         }
     }
+
+    cout << "Servidor: " << gs_ip << endl;
+    cout << "Porta: " << gs_port << endl;
     struct addrinfo *infoaddr = nullptr;
     struct addrinfo *infoaddr_tcp = nullptr;
     char buffer[BUFFER_SIZE];

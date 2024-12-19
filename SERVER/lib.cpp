@@ -663,7 +663,7 @@ void format_str(string &scorefilename, string &buffer, string &code){
 }
 
 
-int validate_args(int argc, char *argv[], const char *&gs_port, bool &verbose){
+int validate_args(int argc, char *argv[], char *&gs_port, bool &verbose){
     // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-p") == 0 && i + 1 < argc)

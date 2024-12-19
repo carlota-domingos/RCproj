@@ -25,7 +25,7 @@ using namespace std;
 //--------------------------------------UDP SERVER------------------------------------------------------------------------------------------
 
 // Função para inicializar o socket
-int init_socket_server(struct addrinfo*& infoaddr,const char* PORT) {
+int init_socket_server(struct addrinfo*& infoaddr,char* PORT) {
     int fd_udp = socket(AF_INET, SOCK_DGRAM, 0); 
     if (fd_udp == -1) {
         perror("Erro ao criar socket");
@@ -74,7 +74,7 @@ int send_message_server(int fd_udp, const char* buffer, size_t length, struct so
 //--------------------------------------UDP PLAYER------------------------------------------------------------------------------------------------------
 
 // Função para inicializar o tcp
-int init_socket_player(const char *hostname, struct addrinfo *&infoaddr,const char* PORT) {
+int init_socket_player(char *hostname, struct addrinfo *&infoaddr,char* PORT) {
     int fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd_udp < 0) {
         perror("Erro ao criar socket");
@@ -124,7 +124,7 @@ int receive_socket_udp_player(int fd_udp, char *buffer, size_t buffer_size){
 //--------------------------------------TCP SERVER------------------------------------------------------------------------------------------------------
 
 // Função para inicializar mensagem
-int init_tcp_server(const char *port) {
+int init_tcp_server(char *port) {
     int fd;
     struct addrinfo hints, *res;
     int errcode;
@@ -194,7 +194,7 @@ int send_message_tcp_server(int client_fd, const char *message, ssize_t size) {
 //--------------------------------------TCP PLAYER------------------------------------------------------------------------------------------------------
 
 // Função para inicializar mensagem
-int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr, const char* PORT) {
+int init_tcp_player(char *hostname, struct addrinfo *&infoaddr, char* PORT) {
     int fd;
     struct addrinfo hints;
     int errcode;

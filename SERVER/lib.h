@@ -72,7 +72,7 @@ string get_str_time(time_t time, int mode);
 void process_player(game_player *player, string &code, int nT, string &send_buffer, time_t play_time);
 string get_termination_type(const string &type);
 void format_str(string &scorefilename,  string &buffer, string &code);
-int validate_args(int argc, char *argv[], const char *&gs_port, bool &verbose);
+int validate_args(int argc, char *argv[], char *&gs_port, bool &verbose);
 game_player *find_player(const string &plid);
 
 #endif // LIB_H
