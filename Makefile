@@ -1,0 +1,49 @@
+# Nome do compilador
+CXX = g++
+
+# Flags de compilação
+CXXFLAGS = -Wall -std=c++11 -I./UdpTcp
+
+# Diretórios
+PLAYER_DIR = PLAYER
+SERVER_DIR = SERVER
+UDPTCP_DIR = UdpTcp
+SCORES_DIR = SERVER/SCORES
+GAMES_DIR = SERVER/GAMES
+# Arquivos fonte para os executáveis
+PLAYER_SRC = $(PLAYER_DIR)/player.cpp $(PLAYER_DIR)/libPlayer.cpp $(UDPTCP_DIR)/udpTcp.cpp
+SERVER_SRC = $(SERVER_DIR)/GS.cpp $(SERVER_DIR)/lib.cpp $(UDPTCP_DIR)/udpTcp.cpp
+
+# Nomes dos executáveis
+PLAYER_EXEC = $(PLAYER_DIR)/player
+SERVER_EXEC = $(SERVER_DIR)/server
+
+# Regra padrão: compilar tudo
+all: $(PLAYER_EXEC) $(SERVER_EXEC)
+
+# Regra para compilar o player
+$(PLAYER_EXEC): $(PLAYER_SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+# Regra para compilar o servidor
+$(SERVER_EXEC): $(SERVER_SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+# Regra para executar o player dentro do diretório
+player: $(PLAYER_EXEC)
+	cd $(PLAYER_DIR) && ./player
+
+# Regra para executar o servidor dentro do diretório
+server: $(SERVER_EXEC)
+	cd $(SERVER_DIR) && ./server
+
+# Regra para limpar os arquivos compilados
+clean:
+	rm -f $(PLAYER_EXEC) $(SERVER_EXEC)
+	rm -f $(PLAYER_DIR)/*.o $(SERVER_DIR)/*.o $(UDPTCP_DIR)/*.o
+	rm -f $(PLAYER_DIR)/*.txt $(SERVER_DIR)/*.txt
+	rm -fr $(GAMES_DIR) $(SCORES_DIR)
+
+
+# Garante que a regra 'clean' seja chamada corretamente
+.PHONY: all clean run_player run_server
