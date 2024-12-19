@@ -20,8 +20,6 @@
 using namespace std;
 
 #define BUFFER_SIZE 128
-
-
 //--------------------------------------UDP SERVER------------------------------------------------------------------------------------------
 
 // Função para inicializar o socket
@@ -53,8 +51,6 @@ int init_socket_server(char* PORT) {
     }
     return fd_udp; 
 }
-
-
 
 // Função para receber mensagem
 ssize_t receive_message_server(int fd_udp, char* buffer, size_t buffer_size, struct sockaddr_in& addr, socklen_t& addrlen_udp) {

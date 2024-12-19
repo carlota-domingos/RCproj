@@ -334,13 +334,13 @@ int main(int argc, char *argv[]) {
 
     while (true) {
         char *buffer = (char *)malloc(BUFFER_SIZE);
-
         if (buffer == nullptr) {
             cerr << "Memory allocation failed" << endl;
             close(fd_tcp);
             close(fd_udp);
             exit(1);
         }
+
         string buffer_r(BUFFER_SIZE_GS, '\0');
 
         FD_ZERO(&activefds);
@@ -373,16 +373,15 @@ int main(int argc, char *argv[]) {
 
             time_t now = time(0);
             buffer_r = string(buffer, n_udp);
-            // char ip_str[INET_ADDRSTRLEN];
-            // inet_ntop(AF_INET, &(addr_udp.sin_addr), ip_str, INET_ADDRSTRLEN);
+            char ip_str[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &(addr_udp.sin_addr), ip_str, INET_ADDRSTRLEN);
             
             if (case_player(buffer_r, send_string, now,args_verbose) != 0) {
                 cerr << "Erro ao processar o buffer UDP!" << endl;
                 send_string = "ERR\n";
             } else if (verbose) {
                 verbose_str = "[VERBOSE] " + args_verbose;
-                //string ip_addr = string(ip_str);
-                string ip_addr = "aaaaaaaaa";
+                string ip_addr = string(ip_str);
                 if (ip_addr == "127.0.0.1")
                     verbose_str += " [Ip Address: localhost]";
                 else
@@ -410,14 +409,14 @@ int main(int argc, char *argv[]) {
             socklen_t addrlen_tcp = sizeof(addr_tcp);
             int client_fd = accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp);
             if (client_fd >= 0) {
-                pid_t pid = fork();
+            //     pid_t pid = fork();
                 
-                if (pid < 0) { 
+                // if (pid < 0) { 
                     perror("Erro ao criar processo filho");
                     close(client_fd);
                     continue;
                     
-                } else if (pid == 0) { // Processo filho
+                // } else if (pid == 0) { // Processo filho
                     close(fd_tcp); 
                     char *buffer = (char *)malloc(BUFFER_SIZE);
                     if (!buffer) {
@@ -467,9 +466,9 @@ int main(int argc, char *argv[]) {
                     free(buffer);
                     close(client_fd);
                     exit(0); 
-                } else {
-                    close(client_fd); 
-                }
+                // } else {
+                //     close(client_fd); 
+                // }
             }
         }
         free(buffer);
