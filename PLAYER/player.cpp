@@ -29,9 +29,9 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
     {
         if (buffer == "RDB OK\n")
         {
-            std::cout << "Pode começar a jogar :)" << std::endl;
+            cout << "Pode começar a jogar :)" << endl;
             curr_game.reset();
-            curr_game.plid = sendmsg.substr(4, 6);
+            curr_game.plid = sendmsg.substr(4, 6); 
         }
         else if (buffer == "RDB NOK\n")
         {
@@ -103,6 +103,7 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
     else if (buffer.substr(0, 3) == "RTR") {
         if (buffer.substr(0, 6) == "RTR OK") {
             cout << "Tentativa numero " << curr_game.nT << endl;
+            cout << "\n";
             cout << "nB: " << buffer.substr(9, 1) << " nW: " << buffer.substr(11, 1) << endl;
             try {
                 if (std::stoi(buffer.substr(7, 1)) == curr_game.nT)
@@ -188,21 +189,28 @@ int main(int argc, char *argv[]){
             perror("Erro ao ler a mensagem");
             return -1;
         }
+        cout << "\n" ;
 
         if ((code = case_terminal(sendmsg)) == -1 || add_args(sendmsg, code, curr_game) == -1)
         {
+            cout <<"\n";
+            cout << "---------------------------------" << endl;
+            cout <<"\n";
             continue;
         }
         else if (code == 5)
         {
             flag = 0;
         }
-        else if ((code == 1 || code == 2) && check_active_game(sendmsg, curr_game) == 1)
+        else if ((code == 1 || code == 2) && check_active_game(sendmsg, curr_game) == 1){
+            cout <<"\n";
+            cout << "---------------------------------" << endl;
+            cout <<"\n";
             continue;
+        }
 
         sendmsg = sendmsg + '\n';
-        const char *csendmsg = sendmsg.c_str(); // Converte a string para um array de caracteres
-        printf("Mensagem enviada: %s\n", csendmsg);
+        const char *csendmsg = sendmsg.c_str(); 
         if (code == 0 || code == 3)
         { // mensagem por tcp
             int fd_tcp = init_tcp_player(gs_ip, infoaddr_tcp, gs_port);
@@ -271,11 +279,12 @@ int main(int argc, char *argv[]){
                 case_server(buffer, code, sendmsg);
             }
         }
-
+        cout <<"\n";
+        cout << "---------------------------------" << endl;
+        cout <<"\n";
         sendmsg = "";
     }
     // Limpeza
-
     freeaddrinfo(infoaddr);
     close(fd);
     printf("A sair do jogo\n");

@@ -15,37 +15,31 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
+#include "libPlayer.h"
 
 
 using namespace std;
 #define BUFFER_SIZE 128
 
 // Class do jogador e funções 
-class game_player{
-public:
-    std::string plid;
-    int nT;
-    bool active = false;
+game_player::game_player(const std::string &id) : plid(id), nT(1) {}
 
-    game_player(const std::string &id) : plid(id), nT(1) {}
+void game_player::finish() {
+    active = false;
+}
 
-    void finish(){
-        active = false;
-    }
+void game_player::reset() {
+    nT = 1;
+    active = true;
+}
 
-    void reset() {
-        nT = 1;
-        active = true;
-    }
+void game_player::next_try() {
+    nT++;
+}
 
-    void next_try(){
-        nT++;
-    }
-
-    bool same_try(int server_try) const{
-        return nT == server_try;
-    }
-};
+bool game_player::same_try(int server_try) const {
+    return nT == server_try;
+}
 
 //funcao para ler do terminal
 int get_msg(string &msg) {

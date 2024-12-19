@@ -2,16 +2,16 @@
 CXX = g++
 
 # Flags de compilação
-CXXFLAGS = -Wall -std=c++11
+CXXFLAGS = -Wall -std=c++11 -I../UdpTcp
 
 # Arquivos fonte
-SRC = GS.cpp lib.cpp
+SRC = GS.cpp lib.cpp ../UdpTcp/udpTcp.cpp
 
 # Nome do executável
-EXEC = server 
+EXEC = server
 
-gm = SERVER
-
+gm = GAMES
+sm = SCORES
 
 # Regra padrão: compilar o servidor
 all: $(EXEC)
@@ -23,7 +23,9 @@ $(EXEC): $(SRC)
 # Regra para limpar os arquivos compilados
 clean:
 	rm -f $(EXEC)
-	rm -rf $(gm) 
+	rm -rf $(gm) $(sm)
+	rm -f *.txt
+	rm -f *.o
 
 # Garante que a regra 'clean' seja chamada corretamente
 .PHONY: all clean

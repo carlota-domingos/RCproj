@@ -92,7 +92,7 @@ int case_player(string &buffer, string &send_buffer, time_t play_time) {
     if (buffer.compare("SSB\n") == 0) {
         struct dirent **filelist;
         int nentries;
-        nentries = scandir("SERVER/SCORES/", &filelist, 0, alphasort);
+        nentries = scandir("SCORES/", &filelist, 0, alphasort);
 
         bool is_empty = true;
         if (nentries < 0) {

@@ -38,7 +38,7 @@ game_file::game_file(const string &id, const string &mode, const string &code, c
      game_mode = "PLAY";
     else
         game_mode = "DEBUG";
-    string path = "SERVER/GAME_" + plid + ".txt";
+    string path = "GAME_" + plid + ".txt";
     path_file = path;
     time_init = time_i;
     int fd_game = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -56,8 +56,6 @@ game_file::game_file(const string &id, const string &mode, const string &code, c
 
 // Função que grava uma nova linha no arquivo de jogo com informações sobre o código
 void game_file::new_line(const string &code, int nb, int nw, time_t play_time) {
-    cout << time_init << endl;
-    cout << play_time << endl;
     time_t game_time = play_time - time_init;
     string time_str = to_string(game_time);
     string line = "T: " + code.substr(0, 4) + " " + to_string(nb) + " " + to_string(nw) + " " + time_str + "\n";
@@ -134,7 +132,7 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
     time_t game_time = finishtime - time_init;
     string game_time_str = to_string(game_time);
     string last_line = get_str_time(finishtime, 0) + " " + game_time_str + "\n";
-    string new_path = "SERVER/GAMES/" + plid + "/" + get_str_time(finishtime, 1) + "_" + term + ".txt";
+    string new_path = "GAMES/" + plid + "/" + get_str_time(finishtime, 1) + "_" + term + ".txt";
     create_game_dir(plid);
     //renames the file
     if (rename(path_file.c_str(), new_path.c_str()) == -1) {
@@ -149,10 +147,10 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
     }
     if (term == "W") {
         string score_fn = score + "_" + plid + "_" + get_str_time(finishtime, 1) + ".txt";
-        string path = "SERVER/SCORES/" + score_fn;
+        string path = "SCORES/" + score_fn;
         struct stat st;
-        if (stat("SERVER/SCORES", &st) != 0) {
-            perror("Directory SERVER/SCORES does not exist");
+        if (stat("SCORES", &st) != 0) {
+            perror("Directory SCORES does not exist");
             error = 1;
             return;
         }
@@ -272,22 +270,18 @@ string get_termination_type(const string &type){
 
 // Função que cria diretorias
 void create_directories(){
-    // Criar o diretório scoreboard
-    if (mkdir("SERVER", 0777) == -1) {
-        perror("Erro ao criar diretório SERVER");
-    }
-    if (mkdir("SERVER/SCORES", 0777) == -1) {
+    if (mkdir("SCORES", 0777) == -1) {
         perror("Erro ao criar diretório SCORES");
     }
     // Criar o diretório show_trials
-    if (mkdir("SERVER/GAMES", 0777) == -1) {
+    if (mkdir("GAMES", 0777) == -1) {
         perror("Erro ao criar diretório GAMES");
     }
 }
 
 // Função que cria a diretoria Games do player
 void create_game_dir(const string &plid){
-    string path = "SERVER/GAMES/" + plid;
+    string path = "GAMES/" + plid;
     mkdir(path.c_str(), 0777);
 }
 
@@ -313,9 +307,9 @@ void generate_random_colors(char *result) {
     char colors[] = {'R', 'G', 'B', 'Y', 'O', 'P'};
     size_t num_available_colors = sizeof(colors) / sizeof(colors[0]);
 
-    std::random_device rd;                                             
-    std::mt19937 gen(rd());                                            
-    std::uniform_int_distribution<> dist(0, num_available_colors - 1); 
+    random_device rd;                                             
+    mt19937 gen(rd());                                            
+    uniform_int_distribution<> dist(0, num_available_colors - 1); 
 
     for (int i = 0; i < NUM_COLORS; i++)
     {
@@ -331,7 +325,7 @@ int FindTopScores(list<string> *list) {
     int nentries, ifile;
     char fname[512]; 
     FILE *fp;
-    nentries = scandir("SERVER/SCORES/", &filelist, 0, alphasort);
+    nentries = scandir("SCORES/", &filelist, 0, alphasort);
     ifile = 0;
     if (nentries < 0) {
         perror("Erro ao ler o diretório de scores");
@@ -340,7 +334,7 @@ int FindTopScores(list<string> *list) {
     else {
         while (nentries--) {
             if (filelist[nentries]->d_name[0] != '.') {
-                snprintf(fname, sizeof(fname), "SERVER/SCORES/%s", filelist[nentries]->d_name);
+                snprintf(fname, sizeof(fname), "SCORES/%s", filelist[nentries]->d_name);
                 fp = fopen(fname, "r");
                 if (fp != NULL) {
                     char mode[10];
@@ -372,14 +366,14 @@ int FindLastGame(string &PLID_str, char *fname){
     char dirname[50];
 
     sprintf(filename, "GAME_%s.txt", PLID);
-    nentries = scandir("SERVER", &filelist, 0, alphasort);
+    nentries = scandir(".", &filelist, 0, alphasort);
     found = 0;
 
     if (nentries > 0) {
         while (nentries--) {
             if (strcmp(filelist[nentries]->d_name, filename) == 0)
             {
-                sprintf(fname, "SERVER/%s", filelist[nentries]->d_name);
+                sprintf(fname, "%s", filelist[nentries]->d_name);
                 found = 1;
             }
             free(filelist[nentries]);
@@ -389,7 +383,7 @@ int FindLastGame(string &PLID_str, char *fname){
         free(filelist);
     } 
     if (!found) {
-        sprintf(dirname, "SERVER/GAMES/%s/", PLID);
+        sprintf(dirname, "GAMES/%s/", PLID);
         nentries = scandir(dirname, &filelist, 0, alphasort);
         found = 0;
         if (nentries <= 0)
@@ -397,7 +391,7 @@ int FindLastGame(string &PLID_str, char *fname){
         else {
             while (nentries--) {
                 if (filelist[nentries]->d_name[0] != '.') {
-                    sprintf(fname, "SERVER/GAMES/%s/%s", PLID, filelist[nentries]->d_name);
+                    sprintf(fname, "GAMES/%s/%s", PLID, filelist[nentries]->d_name);
                     found = 1;
                 }
                 free(filelist[nentries]);
@@ -468,7 +462,6 @@ void match_code(const string &code1, const string &code2, int &nW, int &nB)
     cout << "Code 2: " << code2 << endl;
     for (int i = 0; i < NUM_COLORS; i++)
     {
-        cout << "olaaaa match_code" << endl;
         if (code1[i] == code2[i])
         {
             nB++;
@@ -508,12 +501,12 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
 {
     
     if (player == nullptr) {
-        std::cerr << "Erro: player é nullptr!" << std::endl;
+        cerr << "Erro: player é nullptr!" << endl;
         return;
     }
 
     if (player->plid.empty()) {
-        std::cerr << "Erro: plid está vazio!" << std::endl;
+        cerr << "Erro: plid está vazio!" << endl;
         return;
     }
     else if (player->ativo) {
@@ -527,13 +520,7 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
             return;
         }
         if (player->same_try(nT) || (player->same_try(nT - 1) && find_play(player->plid, code)))            {
-            cout << "ola22222" << endl;
-            std::cout << "Jogador com PLID: ";
-            for (char c : player->plid) {
-                std::cout << "carater: " << c << std::endl;
-            }
-            std::cout << " está ativo." << std::endl;
-            cout << "ola22222" << endl;
+            cout << "Jogador com PLID: ";
             int nW = 0;
             int nB = 0;
             if (find_play(player->plid, code) && player->same_try(nT))
@@ -542,7 +529,6 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
                 send_buffer = "RTR DUP\n";
                 return;
             }
-            cout << "ola22222" << endl;
             match_code(player->codigo, code, nW, nB);
             cout << "nW: " << nW << " nB: " << nB << endl;
             if (nT == NUM_TRIES && nB != NUM_COLORS)

@@ -1,6 +1,5 @@
 #ifndef UDPTCP_H_INCLUDED
 #define UDPTCP_H_INCLUDED
-#include "udpTcp.cpp"
 #include <stddef.h>
 #include <netdb.h>
 #include <cstdio>
@@ -32,7 +31,7 @@ int accept_connection_tcp_server(int server_fd, struct sockaddr_in *addr, sockle
 ssize_t read_message_tcp_server(int client_fd, char *buffer, size_t size);
 int send_message_tcp_server(int client_fd, const char *message, ssize_t size);
 
-int init_tcp_player(char *hostname, struct addrinfo *&infoaddr, const char* PORT);
+int init_tcp_player(const char *hostname, struct addrinfo *&infoaddr, const char* PORT);
 int send_tcp_player(int fd, const char *message);
 ssize_t receive_tcp_player(int fd, char *buffer, size_t size);
 
