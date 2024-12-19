@@ -311,22 +311,13 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     create_directories();
-    struct addrinfo *infoaddr = nullptr;
 
     // Inicializa o servidor UDP
-    int fd_udp = init_socket_server(infoaddr, gs_port);
+    int fd_udp = init_socket_server(gs_port);
     if (fd_udp < 0)
         return 1;
     else 
         cout << "Servidor UDP inicializado na porta " << gs_port << endl;
-
-    if (bind_socket_server(fd_udp, infoaddr) < 0) {
-        freeaddrinfo(infoaddr);
-        close(fd_udp);
-        return 1;
-    }
-    else 
-        cout << "Servidor UDP ligado na porta " << gs_port << endl;
 
     int fd_tcp = init_tcp_server(gs_port);
     if (fd_tcp < 0) {
@@ -351,6 +342,7 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
         string buffer_r(BUFFER_SIZE_GS, '\0');
+
         FD_ZERO(&activefds);
         FD_SET(fd_udp, &activefds);
         FD_SET(fd_tcp, &activefds);
@@ -381,19 +373,20 @@ int main(int argc, char *argv[]) {
 
             time_t now = time(0);
             buffer_r = string(buffer, n_udp);
-            char ip_str[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(addr_udp.sin_addr), ip_str, INET_ADDRSTRLEN);
+            // char ip_str[INET_ADDRSTRLEN];
+            // inet_ntop(AF_INET, &(addr_udp.sin_addr), ip_str, INET_ADDRSTRLEN);
             
             if (case_player(buffer_r, send_string, now,args_verbose) != 0) {
                 cerr << "Erro ao processar o buffer UDP!" << endl;
                 send_string = "ERR\n";
             } else if (verbose) {
                 verbose_str = "[VERBOSE] " + args_verbose;
-                string ip_addr = string(ip_str);
+                //string ip_addr = string(ip_str);
+                string ip_addr = "aaaaaaaaa";
                 if (ip_addr == "127.0.0.1")
                     verbose_str += " [Ip Address: localhost]";
                 else
-                    verbose_str += " [Ip Address: " + string(ip_str)+ "]\n";
+                    verbose_str += " [Ip Address: " + ip_addr+ "]\n";
                 cout << verbose_str << endl;
             }
             args_verbose.clear();

@@ -25,17 +25,19 @@ using namespace std;
 //--------------------------------------UDP SERVER------------------------------------------------------------------------------------------
 
 // Função para inicializar o socket
-int init_socket_server(struct addrinfo*& infoaddr,char* PORT) {
+int init_socket_server(char* PORT) {
     int fd_udp = socket(AF_INET, SOCK_DGRAM, 0); 
     if (fd_udp == -1) {
         perror("Erro ao criar socket");
         return -1;
     }
-
-    addrinfo hints;
+    struct addrinfo *infoaddr, hints;
     memset(&hints, 0, sizeof(hints));
+
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+    
     int errcode_udp = getaddrinfo(NULL,PORT , &hints, &infoaddr);
 
     if (errcode_udp != 0) {
@@ -43,18 +45,16 @@ int init_socket_server(struct addrinfo*& infoaddr,char* PORT) {
         close(fd_udp);
         return -1;
     }
-    return fd_udp; 
-}
 
-// Função para dar bind do socket ao endereço
-int bind_socket_server(int fd_udp, struct addrinfo* infoaddr) {
     int n = bind(fd_udp, infoaddr->ai_addr, infoaddr->ai_addrlen);
     if (n == -1) {
         perror("Erro ao vincular o socket");
         return -1;
     }
-    return 0; 
+    return fd_udp; 
 }
+
+
 
 // Função para receber mensagem
 ssize_t receive_message_server(int fd_udp, char* buffer, size_t buffer_size, struct sockaddr_in& addr, socklen_t& addrlen_udp) {
