@@ -60,7 +60,7 @@ extern vector<game_player> players;
 ofstream create_file(const string& directory, const string& filename);
 void create_directories();
 void create_game_dir(const string &plid);
-int code_val(const string& code);
+int code_val(string& code);
 bool valid_time(const string& str);
 void generate_random_colors(char *result);
 int FindTopScores(list<string> *list);

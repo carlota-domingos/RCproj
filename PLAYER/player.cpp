@@ -21,44 +21,40 @@ using namespace std;
 int flag = 1;
 game_player curr_game= game_player("000000");
 
-
+// FUnção que trata da mensagem que o server mandou
 int case_server(const char *buffer_received, int code, string &sendmsg){
     string buffer(buffer_received); 
     string file_out;
-    if (buffer.substr(0, 3) == "RDB")
-    {
-        if (buffer == "RDB OK\n")
-        {
+    // Verefica o status do player em debug mode
+    if (buffer.substr(0, 3) == "RDB") {
+        if (buffer == "RDB OK\n") {
             cout << "Pode começar a jogar :)" << endl;
             curr_game.reset();
             curr_game.plid = sendmsg.substr(4, 6); 
         }
-        else if (buffer == "RDB NOK\n")
-        {
+        else if (buffer == "RDB NOK\n") {
             cout << "Player already in a game" << endl;
         }
-        else if (buffer == "RDB ERR\n")
-        {
+        else if (buffer == "RDB ERR\n") {
             cout << "Incorrect arguments given" << endl;
         }
     }
-    else if (buffer.substr(0, 3) == "RSG")
-    {
-        if (buffer == "RSG OK\n")
-        {
+    // Verefica o status do player 
+    else if (buffer.substr(0, 3) == "RSG") {
+        if (buffer == "RSG OK\n") {
             std::cout << "Pode começar a jogar :)" << std::endl;
             curr_game.reset();
             curr_game.plid = sendmsg.substr(4, 6);
         }
-        else if (buffer == "RSG NOK\n")
-        {
+        else if (buffer == "RSG NOK\n") {
             cout << "Player already in a game" << endl;
         }
-        else if (buffer == "RSG ERR\n")
-        {
+        else if (buffer == "RSG ERR\n") {
             cout << "Incorrect arguments given" << endl;
         }
     }
+
+    // Verefica o player tem um jogo ativo pelo ficheiro
     else if (buffer.substr(0, 3) == "RST") {
         if (buffer.substr(0, 7) == "RST ACT") {
             get_file_msg(buffer, file_out);
@@ -73,6 +69,7 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
             cout << "Não existe jogos ativos ou passados do player" << endl;
         }
     }
+    // Verifica a scoreboard 
     else if (buffer.substr(0, 3) == "RSS") {
         
         if (buffer == "RSS EMPTY\n") {
@@ -83,6 +80,7 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
             cout << file_out << endl;
         }
     }
+    // Resposta ao quit 
     else if (buffer.substr(0, 3) == "RQT") {
         if (buffer.substr(0, 6) == "RQT OK") {
             cout << "Jogo terminado com sucesso" << endl;
@@ -147,21 +145,18 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
     return 0;
 }
 
+// Função main do player
 int main(int argc, char *argv[]){
     const char *gs_ip = "193.136.138.142";
     const char *gs_port = "58081";
-    for (int i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-n") == 0 && i + 1 < argc)
-        {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
             gs_ip = argv[++i];
         }
-        else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc)
-        {
+        else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
             gs_port = argv[++i];
         }
-        else
-        {
+        else {
             cerr << "Usage: " << argv[0] << " [-n GSIP] [-p GSport]" << endl;
             return 1;
         }
@@ -176,30 +171,24 @@ int main(int argc, char *argv[]){
 
     // Inicializa o socket
     int fd = init_socket_player(gs_ip, infoaddr, gs_port);
-    if (fd < 0)
-    {
+    if (fd < 0) {
         return 1;
     }
 
-    // loop para durante o jogo
-    while (flag == 1)
-    {
-        if (get_msg(sendmsg) != 0)
-        {
+    while (flag == 1) {
+        if (get_msg(sendmsg) != 0){
             perror("Erro ao ler a mensagem");
             return -1;
         }
         cout << "\n" ;
 
-        if ((code = case_terminal(sendmsg)) == -1 || add_args(sendmsg, code, curr_game) == -1)
-        {
+        if ((code = case_terminal(sendmsg)) == -1 || add_args(sendmsg, code, curr_game) == -1) {
             cout <<"\n";
             cout << "---------------------------------" << endl;
             cout <<"\n";
             continue;
         }
-        else if (code == 5)
-        {
+        else if (code == 5) {
             flag = 0;
         }
         else if ((code == 1 || code == 2) && check_active_game(sendmsg, curr_game) == 1){
@@ -211,18 +200,16 @@ int main(int argc, char *argv[]){
 
         sendmsg = sendmsg + '\n';
         const char *csendmsg = sendmsg.c_str(); 
-        if (code == 0 || code == 3)
-        { // mensagem por tcp
+        if (code == 0 || code == 3) { 
             int fd_tcp = init_tcp_player(gs_ip, infoaddr_tcp, gs_port);
-            if (fd_tcp < 0)
-            {
+            if (fd_tcp < 0) {
                 freeaddrinfo(infoaddr_tcp);
                 freeaddrinfo(infoaddr);
                 close(fd);
                 return 1;
             }
-            if ((n = send_tcp_player(fd_tcp, csendmsg)) < 0)
-            {
+            // mensagem por tcp
+            if ((n = send_tcp_player(fd_tcp, csendmsg)) < 0)  {
                 printf("erro a enviar a mensagem");
                 freeaddrinfo(infoaddr);
                 freeaddrinfo(infoaddr_tcp);
@@ -232,9 +219,7 @@ int main(int argc, char *argv[]){
             }
             // Recebe mensagem
             n = receive_tcp_player(fd_tcp, buffer_tcp, TCP_BUFFER_SIZE);
-
-            if (n < 0)
-            {
+            if (n < 0) {
                 printf("erro a receber a mensagem");
                 freeaddrinfo(infoaddr);
                 close(fd_tcp);
@@ -242,40 +227,34 @@ int main(int argc, char *argv[]){
                 freeaddrinfo(infoaddr_tcp);
                 return 1;
             }
-            else if (n == 0)
-            {
+            else if (n == 0) {
                 cout << "No message received." << endl;
             }
-            else
-            {
+            else {
                 case_server(buffer_tcp, code, sendmsg);
             }
             close(fd_tcp);
             freeaddrinfo(infoaddr_tcp);
         }
-        else
-        { // mensagem por udp
-            if (send_socket_udp_player(fd, csendmsg, infoaddr) < 0)
-            {
+        
+        else { 
+            // mensagem por udp
+            if (send_socket_udp_player(fd, csendmsg, infoaddr) < 0) {
                 freeaddrinfo(infoaddr);
                 close(fd);
                 return 1;
             }
-
             // Recebe mensagem
             int n = receive_socket_udp_player(fd, buffer, BUFFER_SIZE);
-            if (n < 0)
-            {
+            if (n < 0) {
                 freeaddrinfo(infoaddr);
                 close(fd);
                 return 1;
             }
-            else if (n == 0)
-            {
+            else if (n == 0) {
                 cout << "No message received." << endl;
             }
-            else
-            {
+            else {
                 case_server(buffer, code, sendmsg);
             }
         }
@@ -284,7 +263,6 @@ int main(int argc, char *argv[]){
         cout <<"\n";
         sendmsg = "";
     }
-    // Limpeza
     freeaddrinfo(infoaddr);
     close(fd);
     printf("A sair do jogo\n");

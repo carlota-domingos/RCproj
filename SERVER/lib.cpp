@@ -35,7 +35,7 @@ vector<game_player> players;
 game_file::game_file(const string &id, const string &mode, const string &code, const string &timeout, time_t time_i){
     plid = id;
     if (mode == "P")
-     game_mode = "PLAY";
+        game_mode = "PLAY";
     else
         game_mode = "DEBUG";
     string path = "GAME_" + plid + ".txt";
@@ -99,7 +99,7 @@ string game_file::get_code_file() {
 int game_file::get_nT_file() {
     int fd_game = open(path_file.c_str(), O_RDONLY);
     if (fd_game == -1) {
-        printf("get_nT_file\n");
+        // printf("get_nT_file\n");
         perror("Erro ao abrir o ficheiro de jogo");
         error = 1;
     }
@@ -128,7 +128,7 @@ string game_file::get_str_time(time_t time, int mode) {
 
 // Função que trata de tudo para terminar o jogo
 void game_file::finish_game(time_t finishtime, const string &term, const string &score) {
-    cout << "Jogo terminado. ficheiro criado " << endl;
+    // cout<< "Jogo terminado. ficheiro criado " << endl;
     time_t game_time = finishtime - time_init;
     string game_time_str = to_string(game_time);
     string last_line = get_str_time(finishtime, 0) + " " + game_time_str + "\n";
@@ -175,8 +175,8 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
 
 // Função que imprime informação
 void game_file::display_info() const {
-    cout << "Player ID: " << plid << "\n";
-    cout << "Time Init: " << time_init << "\n";
+    // cout<< "Player ID: " << plid << "\n";
+    // cout<< "Time Init: " << time_init << "\n";
 }
 
 //-----------------------------------------------------------CLASSE GAME_PLAYER-------------------------------------------------------
@@ -227,7 +227,7 @@ void game_player::update_codigo(const string &new_code){
 
 // Função que termina o jogo do player
 void game_player::finish(const string &term, time_t time) {
-    cout << "Jogador com PLID " << plid << " terminou o jogo." << endl;
+    // cout<< "Jogador com PLID " << plid << " terminou o jogo." << endl;
     ativo = false;
     file->finish_game(time, term, to_string(NUM_TRIES - nT));
     nT = 0;
@@ -238,10 +238,10 @@ void game_player::finish(const string &term, time_t time) {
 
 // Função que imprime informação
 void game_player::display_info() const {
-    cout << "Player ID: " << plid << "\n";
-    cout << "tempo " << time << "\n";
-    cout << "tentativas " << nT << "\n";
-    cout << "Code: " << codigo << "\n";
+    // cout<< "Player ID: " << plid << "\n";
+    // cout<< "tempo " << time << "\n";
+    // cout<< "tentativas " << nT << "\n";
+    // cout<< "Code: " << codigo << "\n";
 }
 
 //----------------------------------------------------------------------OUTRAS----------------------------------------------------------------
@@ -286,8 +286,12 @@ void create_game_dir(const string &plid){
 }
 
 // Função que verifica se o código recebido é valido
-int code_val(const string &code) {
+int code_val(string &code) {
     regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])");
+    if (regex_match(code, pattern)){
+        code.erase(remove(code.begin(), code.end(), ' '), code.end());
+    }
+    code=code.substr(0, 4) + '\0';
     return regex_match(code, pattern);
 }
 
@@ -458,8 +462,8 @@ void match_code(const string &code1, const string &code2, int &nW, int &nB)
 {
     nW = 0;
     nB = 0;
-    cout << "Code 1: " << code1 << endl;
-    cout << "Code 2: " << code2 << endl;
+    // cout<< "Code 1: " << code1 << endl;
+    // cout<< "Code 2: " << code2 << endl;
     for (int i = 0; i < NUM_COLORS; i++)
     {
         if (code1[i] == code2[i])
@@ -513,27 +517,27 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
         if (player->game_time_act(play_time) == false)
         {
 
-            cout << "Jogador com PLID " << player->plid << " não está ativo." << endl;
-            cout << "Tempo esgotado para o jogador." << endl;
+            // cout<< "Jogador com PLID " << player->plid << " não está ativo." << endl;
+            // cout<< "Tempo esgotado para o jogador." << endl;
             send_buffer = "RTR ETM " + player->codigo + "\n";
             player->finish("T", play_time);
             return;
         }
         if (player->same_try(nT) || (player->same_try(nT - 1) && find_play(player->plid, code)))            {
-            cout << "Jogador com PLID: ";
+            // cout<< "Jogador com PLID: ";
             int nW = 0;
             int nB = 0;
             if (find_play(player->plid, code) && player->same_try(nT))
             {
-                cout << "Tentiva duplicada." << endl;
+                // cout<< "Tentiva duplicada." << endl;
                 send_buffer = "RTR DUP\n";
                 return;
             }
             match_code(player->codigo, code, nW, nB);
-            cout << "nW: " << nW << " nB: " << nB << endl;
+            // cout<< "nW: " << nW << " nB: " << nB << endl;
             if (nT == NUM_TRIES && nB != NUM_COLORS)
             {
-                cout << "Número de tentativas esgotado." << endl;
+                // cout<< "Número de tentativas esgotado." << endl;
                 send_buffer = "RTR ENT " + player->codigo + "\n";
                 player->finish("F", play_time);
                 return;
@@ -541,7 +545,7 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
             else if (nB == NUM_COLORS)
             {
 
-                cout << "Jogador com PLID " << player->plid << " acertou no código." << endl;
+                // cout<< "Jogador com PLID " << player->plid << " acertou no código." << endl;
                 player->next_try();
                 player->file->new_line(code, nB, nW, play_time);
                 send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW) + " " + player->codigo + "\n";
@@ -558,28 +562,26 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
         }
         else
         {
-            cout << "Número de tentativas inválido" << endl;
+            // cout<< "Número de tentativas inválido" << endl;
             send_buffer = "RTR INV\n";
             return;
         }
     }
     else {
-        printf("jogo nao encontrado");
+        // printf("jogo nao encontrado");
         if (player->codigo.empty()) {
-            printf("codigo vazio");
-            cout << "Jogador com PLID " << player->plid << " não está ativo." << endl;
+            // printf("codigo vazio");
+            // cout<< "Jogador com PLID " << player->plid << " não está ativo." << endl;
             send_buffer = "RTR NOK\n";
             return;
         }
     }
 }
 
-void format_str(string &scorefilename, string &buffer, string &code)
-{
+void format_str(string &scorefilename, string &buffer, string &code){
     buffer = "";
     ifstream file(scorefilename);
-    if (file.is_open())
-    {
+    if (file.is_open())  {
         string line;
         vector<string> lines;
         while (getline(file, line))
@@ -595,7 +597,10 @@ void format_str(string &scorefilename, string &buffer, string &code)
         stringstream ss(lines[0]);
         string plid, mode, secret_code, timeout, init_date, init_time, init_epoch_str;
         ss >> plid >> mode >> secret_code >> timeout >> init_date >> init_time >> init_epoch_str;
-
+        if (mode == "P")
+            mode = "PLAY";
+        else
+            mode = "DEBUG";
         if (code == "RST ACT")
         {
             buffer += "     Active game found for player " + plid + "\n";
@@ -678,7 +683,7 @@ int validate_args(int argc, char *argv[], const char *&gs_port, bool &verbose){
 game_player *find_player(const string &plid) {
     // Verifica se o vetor está vazio
     if (players.empty()) {
-        cout << "Player list is empty. Cannot find any player." << endl;
+        // cout<< "Player list is empty. Cannot find any player." << endl;
         return nullptr;
     }
 
