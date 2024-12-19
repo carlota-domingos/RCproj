@@ -112,9 +112,9 @@ int case_player(string &buffer, string &send_buffer, time_t play_time) {
         } else {
             send_buffer = "RSS OK ";
             string filename;
-            int file_size= 0;
             string file_buffer;
-            format_scb(file_size, file_buffer);
+            format_scb(file_buffer);
+            int file_size = file_buffer.size();
             filename = "SCORES_" + get_str_time(play_time, 1) + ".txt";
             send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
             //create file with scores
@@ -136,26 +136,36 @@ int case_player(string &buffer, string &send_buffer, time_t play_time) {
                 char gamefilename_c[256];
                 FindLastGame(PLID, gamefilename_c);
                 gamefilename = string(gamefilename_c);
+                cout << "ficheiro do jogo: " << gamefilename << endl;
                 if (player->ativo)
                 {
                     if (player->game_time_act(play_time) == false) {
                         cout << "Tempo esgotado para o jogador." << endl;
-                        send_buffer = "RTR FIN ";
+                        send_buffer = "RST FIN ";
                         player->finish("T", play_time);
+                        FindLastGame(PLID, gamefilename_c);
+                        gamefilename = string(gamefilename_c);
+                        cout << "ficheiro do jogo: " << gamefilename << endl;
                         string code = "RST FIN";
-                        format_str(gamefilename, file_size, file_buffer, code);
+                        format_str(gamefilename,  file_buffer, code);
+                        file_size = file_buffer.size();
+                        send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
                     } else{
 
                         cout << "Jogador com PLID " << PLID << " está ativo." << endl;
-                        send_buffer = "RST OK ";
-                        string code = "RST OK";
-                        format_str(gamefilename, file_size, file_buffer, code);
+                        send_buffer = "RST ACT ";
+                        string code = "RST ACT";
+                        format_str(gamefilename,  file_buffer, code);
+                        file_size = file_buffer.size();
+                        send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
                     }
                 } else  {
                     cout << "Jogador com PLID " << PLID << " nao está ativo." << endl;
                     send_buffer = "RST FIN ";
                     string code = "RST FIN";
-                    format_str(gamefilename, file_size, file_buffer, code);
+                    format_str(gamefilename, file_buffer, code);
+                    file_size = file_buffer.size();
+                    send_buffer += filename + " " + to_string(file_size) + "\n" + file_buffer;
                 }
             } else {
                 cout << "Jogador com PLID " << PLID << " não encontrado." << endl;
@@ -283,13 +293,12 @@ int case_player(string &buffer, string &send_buffer, time_t play_time) {
     return 0; // Sucesso
 }
 
-
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
     const char *gs_port = "58081"; // Default port number
     bool verbose = false;          // Default verbose mode
     if (validate_args(argc, argv, gs_port, verbose) != 0)
         return 1;
-    
+
     create_directories();
     struct addrinfo *infoaddr = nullptr;
 
@@ -311,15 +320,12 @@ int main(int argc, char *argv[]){
     }
 
     fd_set read_fds;
-    vector<int> client_fds;
     int max_fd = max(fd_udp, fd_tcp);
 
     while (true) {
-        
         char *buffer = (char *)malloc(BUFFER_SIZE);
 
         if (buffer == nullptr) {
-            // Handle allocation failure
             cerr << "Memory allocation failed" << endl;
             close(fd_tcp);
             close(fd_udp);
@@ -337,6 +343,7 @@ int main(int argc, char *argv[]){
             free(buffer);
             break;
         }
+
         if (FD_ISSET(fd_udp, &read_fds)) {
             string send_string(BUFFER_SIZE, '\0');
             struct sockaddr_in addr_udp;
@@ -350,14 +357,11 @@ int main(int argc, char *argv[]){
             }
             time_t now = time(0);
             buffer_r = string(buffer, n_udp);
-            // Processa mensagem UDP
             if (case_player(buffer_r, send_string, now) != 0) {
                 cerr << "Erro ao processar o buffer UDP!" << endl;
                 send_string = "ERR\n";
             }
-            // Envia resposta UDP
             const char *buffer_send = send_string.c_str();
-            cout << "Mensagem a enviar(fora do case): " << buffer_send << endl;
             if (send_message_server(fd_udp, buffer_send, BUFFER_SIZE, addr_udp, addrlen_udp) < 0) {
                 perror("Erro ao enviar mensagem UDP");
                 free(buffer);
@@ -369,46 +373,54 @@ int main(int argc, char *argv[]){
         }
 
         if (FD_ISSET(fd_tcp, &read_fds)) {
-            string send_string(BUFFER_SIZE_GS, '\0');
             struct sockaddr_in addr_tcp;
             socklen_t addrlen_tcp = sizeof(addr_tcp);
             int client_fd = accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp);
             if (client_fd >= 0) {
-                client_fds.push_back(client_fd);
-                max_fd = max(max_fd, client_fd); // Update max_fd
-            }
-            ssize_t n_tcp = read_message_tcp_server(client_fd, buffer, BUFFER_SIZE);
-            if (n_tcp == 0) { // Cliente desconectou
-                cout << "Cliente TCP desconectou." << endl;
-                close(client_fd);
-            }
-            else if (n_tcp == -1) {
-                perror("Erro ao receber mensagem TCP");
-                close(client_fd);
-                send_string = "ERR\n";
-            }
-            else {
-                time_t now = time(0);
-                cout << "Mensagem TCP recebida: " << string(buffer, n_tcp) << endl;
-                buffer_r = string(buffer, n_tcp);
-                if (case_player(buffer_r, send_string, now) != 0) {
-                    cerr << "Mensagem TCP invalida!" << endl;
-                    send_message_tcp_server(client_fd, "ERR", 3);
-                }
-                const char *buffer_send = send_string.c_str();
-                cout << "Mensagem a enviar: " << buffer_send << endl;
-                if (send_message_tcp_server(client_fd, buffer_send, BUFFER_SIZE_GS) < 0) {
-                    perror("Erro ao enviar mensagem TCP");
+                pid_t pid = fork();
+                if (pid < 0) { 
+                    perror("Erro ao criar processo filho");
+                    close(client_fd);
+                    continue;
+                    
+                } else if (pid == 0) { // Processo filho
+                    close(fd_tcp); // O processo filho não precisa do socket de escuta
+                    char *buffer = (char *)malloc(BUFFER_SIZE);
+                    if (!buffer) {
+                        cerr << "Falha na alocação de memória no processo filho" << endl;
+                        close(client_fd);
+                        exit(1);
+                    }
+                    ssize_t n_tcp = read_message_tcp_server(client_fd, buffer, BUFFER_SIZE);
+                    if (n_tcp <= 0) {
+                        if (n_tcp == 0) {
+                            cout << "Cliente TCP desconectou." << endl;
+                        } else {
+                            perror("Erro ao receber mensagem TCP");
+                        }
+                        free(buffer);
+                        close(client_fd);
+                        exit(1);
+                    }
+                    string buffer_r(buffer, n_tcp);
+                    string send_string(BUFFER_SIZE_GS, '\0');
+                    time_t now = time(0);
+                    if (case_player(buffer_r, send_string, now) != 0) {
+                        cerr << "Mensagem TCP inválida!" << endl;
+                        send_string = "ERR\n";
+                    }
+                    const char *buffer_send = send_string.c_str();
+                    if (send_message_tcp_server(client_fd, buffer_send, BUFFER_SIZE_GS) < 0) {
+                        perror("Erro ao enviar mensagem TCP");
+                    }
                     free(buffer);
-                    send_string.clear();
-                    break;
+                    close(client_fd);
+                    exit(0); // Termina o processo filho após lidar com o cliente
+                } else {
+                    close(client_fd); // O processo pai não precisa do descritor do cliente
                 }
-                send_string.clear();
             }
-            close(client_fd);
-            send_string.clear();
         }
-        buffer_r.clear();
         free(buffer);
     }
     close(fd_tcp);

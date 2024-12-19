@@ -29,38 +29,33 @@
 using namespace std;
 
 vector<game_player> players;
+//-------------------------------------------------------------------CLASSE GAME_FILE------------------------------------------------------
 
-game_file::game_file(const string &id, const string &mode, const string &code, const string &timeout, time_t time_i)
-{
+//FUnção construtora da classe game_file
+game_file::game_file(const string &id, const string &mode, const string &code, const string &timeout, time_t time_i){
     plid = id;
     if (mode == "P")
-    {
      game_mode = "PLAY";
-    }
     else
-    {
         game_mode = "DEBUG";
-    }
-    string path = "SERVER/GAMES/" + plid + "/GAME_" + plid + ".txt";
+    string path = "SERVER/GAME_" + plid + ".txt";
     path_file = path;
     time_init = time_i;
     int fd_game = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (fd_game == -1)
-    {
+    if (fd_game == -1) {
         perror("Erro ao abrir o ficheiro de jogo");
         error = 1;
     }
     string firstline = plid + " " + mode + " " + code + " " + timeout + " " + get_str_time(time_init, 0) + " " + to_string(time_init) + "\n";
-    if (write(fd_game, firstline.c_str(), firstline.size()) == -1)
-    {
+    if (write(fd_game, firstline.c_str(), firstline.size()) == -1) {
         perror("Erro ao escrever no ficheiro de jogo");
         error = 1;
     }
     close(fd_game);
 }
 
-void game_file::new_line(const string &code, int nb, int nw, time_t play_time)
-{
+// Função que grava uma nova linha no arquivo de jogo com informações sobre o código
+void game_file::new_line(const string &code, int nb, int nw, time_t play_time) {
     cout << time_init << endl;
     cout << play_time << endl;
     time_t game_time = play_time - time_init;
@@ -75,127 +70,124 @@ void game_file::new_line(const string &code, int nb, int nw, time_t play_time)
     close(fd_game);
 }
 
-string game_file::get_code_file(){
+//Função que lê o arquivo de jogo e retorna o código de jogo
+string game_file::get_code_file() {
     int fd_game = open(path_file.c_str(), O_RDONLY);
-    if (fd_game == -1)
-    {
+    if (fd_game == -1) {
         perror("Erro ao abrir o ficheiro de jogo");
         error = 1;
     }
     string code;
     char buffer[50];
-    if (read(fd_game, buffer, 50) == -1)
-    {
+    if (read(fd_game, buffer, 50) == -1) {
         perror("Erro ao ler o ficheiro de jogo");
         error = 1;
     }
-    // get third word of the first line
     int i = 0;
     int count = 0;
-    while (count < 2)
-    {
+    while (count < 2) {
         if (buffer[i] == ' ')
-        {
             count++;
-        }
         i++;
     }
-    while (buffer[i] != ' ')
-    {
+    while (buffer[i] != ' ') {
         code += buffer[i];
         i++;
     }
     close(fd_game);
     return code;
 }
-
-int game_file::get_nT_file()
-{
-    // counts the number of lines in the file minus the first line
+// Função que vai buscar o numero de tentativas ao ficheiro
+int game_file::get_nT_file() {
     int fd_game = open(path_file.c_str(), O_RDONLY);
-    if (fd_game == -1)
-    {
+    if (fd_game == -1) {
+        printf("get_nT_file\n");
         perror("Erro ao abrir o ficheiro de jogo");
         error = 1;
     }
     int nT = 0;
     char buffer[50];
     while (read(fd_game, buffer, 50) != 0)
-    {
         nT++;
-    }
     close(fd_game);
     return nT - 1;
 }
 
-string game_file::get_str_time(time_t time, int mode)
-{
+// Função que formata o time
+string game_file::get_str_time(time_t time, int mode) {
     char buffer[20];
     struct tm *timeinfo;
-    if (mode == 0)
-    {
+    if (mode == 0) {
         timeinfo = localtime(&time);
         strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
     }
-    else
-    {
+    else {
         timeinfo = localtime(&time);
         strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", timeinfo);
     }
     return string(buffer);
 }
 
-void game_file::finish_game(time_t finishtime, const string &term, const string &score)
-{
+// Função que trata de tudo para terminar o jogo
+void game_file::finish_game(time_t finishtime, const string &term, const string &score) {
+    cout << "Jogo terminado. ficheiro criado " << endl;
     time_t game_time = finishtime - time_init;
     string game_time_str = to_string(game_time);
     string last_line = get_str_time(finishtime, 0) + " " + game_time_str + "\n";
     string new_path = "SERVER/GAMES/" + plid + "/" + get_str_time(finishtime, 1) + "_" + term + ".txt";
-    if (term == "W")
-    {
+    create_game_dir(plid);
+    //renames the file
+    if (rename(path_file.c_str(), new_path.c_str()) == -1) {
+        perror("Erro ao renomear o ficheiro de jogo");
+        error = 1;
+    }
+    path_file = new_path;
+    int fd_game = open(path_file.c_str(), O_WRONLY | O_APPEND);
+    if (write(fd_game, last_line.c_str(), last_line.size()) == -1) {
+        perror("Erro ao escrever no ficheiro de jogo");
+        error = 1;
+    }
+    if (term == "W") {
         string score_fn = score + "_" + plid + "_" + get_str_time(finishtime, 1) + ".txt";
         string path = "SERVER/SCORES/" + score_fn;
-        int score_fd = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
-        if (score_fd == -1)
-        {
-            perror("Erro ao abrir o ficheiro de scores");
+        struct stat st;
+        if (stat("SERVER/SCORES", &st) != 0) {
+            perror("Directory SERVER/SCORES does not exist");
             error = 1;
+            return;
         }
-        string score_line = score + " " + plid + " " + get_code_file() + " " + to_string(get_nT_file()) + " " + game_mode + "\n";
-        if (write(score_fd, score_line.c_str(), score_line.size()) == -1)
-        {
-            perror("Erro ao escrever no ficheiro de scores");
+
+        int score_fd = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+        if (score_fd == -1) {
+            perror("Error opening score file");
             error = 1;
+            return;
+        }
+
+        string score_line = score + " " + plid + " " + get_code_file() + " " + to_string(get_nT_file()) + " " + game_mode + "\n";
+        if (write(score_fd, score_line.c_str(), score_line.size()) == -1) {
+            perror("Error writing to score file");
+            error = 1;
+            close(score_fd);
+            return;
         }
         close(score_fd);
     }
 }
 
-void game_file::display_info() const
-{
+// Função que imprime informação
+void game_file::display_info() const {
     cout << "Player ID: " << plid << "\n";
     cout << "Time Init: " << time_init << "\n";
 }
 
-ofstream create_file(const string &directory, const string &filename)
-{
-    string file_path = directory + "/" + filename;
+//-----------------------------------------------------------CLASSE GAME_PLAYER-------------------------------------------------------
 
-    ofstream file(file_path);
+// Função consturura do game_player
+game_player::game_player(const string &id) : plid(id), ativo(false){}
 
-    if (!file)
-        cerr << "Erro ao criar o arquivo: " << file_path << endl;
-    
-    return file;
-}
-
-game_player::game_player(const string &id) : plid(id), ativo(false)
-{
-    create_game_dir(plid);
-}
-
-void game_player::start_game(int tempo, string &cores, game_file *gfile, time_t tempo_inicio)
-{
+// Função que inicia as informações para o jogo
+void game_player::start_game(int tempo, string &cores, game_file *gfile, time_t tempo_inicio) {
     time = tempo;
     tempo_inicio_jogo = tempo_inicio;
     ativo = true;
@@ -204,45 +196,40 @@ void game_player::start_game(int tempo, string &cores, game_file *gfile, time_t 
     file = gfile;
 }
 
-time_t game_player::get_tempo_inicio_jogo() const
-{
+// Função que envia o tempo do inicio do jogo
+time_t game_player::get_tempo_inicio_jogo() const {
     return tempo_inicio_jogo;
 }
 
-bool game_player::game_time_act(time_t now)
-{
+// Função que diz se já ultrapassou o tempo de jogo maximo (dado pelo player anteriormente)
+bool game_player::game_time_act(time_t now) {
     return (now - tempo_inicio_jogo) < time;
 }
 
-int game_player::findtry(string &code)
-{
-    return 0;
-}
-
-void game_player::reset(const string &id)
-{
+// Função que da reset as informações
+void game_player::reset(const string &id) {
     nT = 1;
-    plid = "";
     codigo = "";
 }
 
-void game_player::next_try()
-{
+// Função que aumenta o número de tentativas
+void game_player::next_try() {
     nT++;
 }
 
-bool game_player::same_try(int server_try) const
-{
+// Função que verefica se o server e o player estão na mesma try
+bool game_player::same_try(int server_try) const{
     return nT == server_try;
 }
 
-void game_player::update_codigo(const string &new_code)
-{
+// Função que atualiza o código
+void game_player::update_codigo(const string &new_code){
     codigo = new_code;
 }
 
-void game_player::finish(const string &term, time_t time)
-{
+// Função que termina o jogo do player
+void game_player::finish(const string &term, time_t time) {
+    cout << "Jogador com PLID " << plid << " terminou o jogo." << endl;
     ativo = false;
     file->finish_game(time, term, to_string(NUM_TRIES - nT));
     nT = 0;
@@ -251,123 +238,115 @@ void game_player::finish(const string &term, time_t time)
     tempo_inicio_jogo = 0;
 }
 
-void game_player::display_info() const
-{
+// Função que imprime informação
+void game_player::display_info() const {
     cout << "Player ID: " << plid << "\n";
     cout << "tempo " << time << "\n";
     cout << "tentativas " << nT << "\n";
     cout << "Code: " << codigo << "\n";
 }
 
-string get_termination_type(const string &type)
-{
+//----------------------------------------------------------------------OUTRAS----------------------------------------------------------------
+
+// Função que cria ficheiros
+ofstream create_file(const string &directory, const string &filename){
+    string file_path = directory + "/" + filename;
+    ofstream file(file_path);
+    if (!file)
+        cerr << "Erro ao criar o arquivo: " << file_path << endl;    
+    return file;
+}
+
+// Função que coloca por extenso o código
+string get_termination_type(const string &type){
     if (type == "W")
-        return "WIN";
+        return "Win";
     if (type == "F")
-        return "FAIL";
+        return "Fail";
     if (type == "T")
-        return "TIMEOUT";
+        return "Timeout";
     if (type == "Q")
-        return "QUIT";
+        return "Quit";
     return "UNKNOWN";
 }
 
-void create_directories()
-{
-    // Criando o diretório scoreboard
-    if (mkdir("SERVER", 0777) == -1)
-    {
+// Função que cria diretorias
+void create_directories(){
+    // Criar o diretório scoreboard
+    if (mkdir("SERVER", 0777) == -1) {
         perror("Erro ao criar diretório SERVER");
     }
-    if (mkdir("SERVER/SCORES", 0777) == -1)
-    {
+    if (mkdir("SERVER/SCORES", 0777) == -1) {
         perror("Erro ao criar diretório SCORES");
     }
-
-    // Criando o diretório show_trials
-    if (mkdir("SERVER/GAMES", 0777) == -1)
-    {
+    // Criar o diretório show_trials
+    if (mkdir("SERVER/GAMES", 0777) == -1) {
         perror("Erro ao criar diretório GAMES");
     }
 }
 
-void create_game_dir(const string &plid)
-{
+// Função que cria a diretoria Games do player
+void create_game_dir(const string &plid){
     string path = "SERVER/GAMES/" + plid;
-    if (mkdir(path.c_str(), 0777) == -1)
-    {
-        perror("Erro ao criar diretório do jogo");
-    }
+    mkdir(path.c_str(), 0777);
 }
 
-int code_val(const string &code)
-{
+// Função que verifica se o código recebido é valido
+int code_val(const string &code) {
     regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])");
-
     return regex_match(code, pattern);
 }
 
-bool valid_time(const string &str)
-{
-    try
-    {
+// Função que verifica se o tempo recebido é valido
+bool valid_time(const string &str){
+    try {
         int num = stoi(str);
         return num >= 0 && num <= 600;
     }
-    catch (...)
-    {
+    catch (...) {
         return false;
     }
 }
 
-void generate_random_colors(char *result)
-{
-    // Array de cores disponíveis
+// Função que gera o código de cores random
+void generate_random_colors(char *result) {
     char colors[] = {'R', 'G', 'B', 'Y', 'O', 'P'};
     size_t num_available_colors = sizeof(colors) / sizeof(colors[0]);
 
-    // Inicializando gerador de números aleatórios
-    std::random_device rd;                                             // Gerador baseado em hardware (ou fallback para entropia pseudoaleatória)
-    std::mt19937 gen(rd());                                            // Mersenne Twister PRNG
-    std::uniform_int_distribution<> dist(0, num_available_colors - 1); // Índices aleatórios no intervalo válido
+    std::random_device rd;                                             
+    std::mt19937 gen(rd());                                            
+    std::uniform_int_distribution<> dist(0, num_available_colors - 1); 
 
-    // Gerando a sequência aleatória de cores
     for (int i = 0; i < NUM_COLORS; i++)
     {
-        int random_index = dist(gen); // Gera um índice aleatório
+        int random_index = dist(gen); 
         result[i] = colors[random_index];
     }
-    result[NUM_COLORS] = '\0'; // Adiciona o terminador nulo para criar uma string válida
+    result[NUM_COLORS] = '\0'; 
 }
 
-int FindTopScores(list<string> *list)
-{
+// Função que encontra os melhores scores 
+int FindTopScores(list<string> *list) {
     struct dirent **filelist;
     int nentries, ifile;
-    char fname[512]; // Increased buffer size
+    char fname[512]; 
     FILE *fp;
     nentries = scandir("SERVER/SCORES/", &filelist, 0, alphasort);
     ifile = 0;
-    if (nentries < 0)
-    {
+    if (nentries < 0) {
         perror("Erro ao ler o diretório de scores");
         return 0;
     }
-    else
-    {
-        while (nentries--)
-        {
-            if (filelist[nentries]->d_name[0] != '.')
-            {
+    else {
+        while (nentries--) {
+            if (filelist[nentries]->d_name[0] != '.') {
                 snprintf(fname, sizeof(fname), "SERVER/SCORES/%s", filelist[nentries]->d_name);
                 fp = fopen(fname, "r");
-                if (fp != NULL)
-                {
+                if (fp != NULL) {
                     char mode[10];
                     int score, notries;
                     char PLID[50], colcode[50];
-                    if (fscanf(fp, "%d %s %s %d %s", &score, PLID, colcode, &notries, mode) == 5)
-                    {
+                    if (fscanf(fp, "%d %s %s %d %s", &score, PLID, colcode, &notries, mode) == 5) {
                         string score_entry = to_string(score) + "  " + PLID + "     " + colcode + "        " + to_string(notries) + "       " + mode;
                         list->push_back(score_entry);
                     }
@@ -380,29 +359,27 @@ int FindTopScores(list<string> *list)
                 break;
         }
         free(filelist);
-    }
+    } 
     return ifile;
 }
 
-int FindLastGame(string &PLID_str, char *fname)
-{
+// Função que encontra o ultimo jogo atravez do ficheiro
+int FindLastGame(string &PLID_str, char *fname){
     const char *PLID = PLID_str.c_str();
     struct dirent **filelist;
     int nentries, found;
-    char dirname[20];
-    sprintf(dirname, "SERVER/GAMES/%s/", PLID);
-    nentries = scandir(dirname, &filelist, 0, alphasort);
+    char filename[30];
+    char dirname[50];
+
+    sprintf(filename, "GAME_%s.txt", PLID);
+    nentries = scandir("SERVER", &filelist, 0, alphasort);
     found = 0;
 
-    if (nentries <= 0)
-        return (0);
-    else
-    {
-        while (nentries--)
-        {
-            if (filelist[nentries]->d_name[0] != '.')
+    if (nentries > 0) {
+        while (nentries--) {
+            if (strcmp(filelist[nentries]->d_name, filename) == 0)
             {
-                sprintf(fname, "SERVER/GAMES/%s/%s", PLID, filelist[nentries]->d_name);
+                sprintf(fname, "SERVER/%s", filelist[nentries]->d_name);
                 found = 1;
             }
             free(filelist[nentries]);
@@ -410,55 +387,63 @@ int FindLastGame(string &PLID_str, char *fname)
                 break;
         }
         free(filelist);
+    } 
+    if (!found) {
+        sprintf(dirname, "SERVER/GAMES/%s/", PLID);
+        nentries = scandir(dirname, &filelist, 0, alphasort);
+        found = 0;
+        if (nentries <= 0)
+            return (0);
+        else {
+            while (nentries--) {
+                if (filelist[nentries]->d_name[0] != '.') {
+                    sprintf(fname, "SERVER/GAMES/%s/%s", PLID, filelist[nentries]->d_name);
+                    found = 1;
+                }
+                free(filelist[nentries]);
+                if (found)
+                    break;
+            }
+            free(filelist);
+        }
     }
     return (found);
 }
 
-int find_play(string &PLID, string &code)
-{
-    printf("ola find play");
+// Função que encontra uma jogada (para vererficação de duplicados)
+int find_play(string &PLID, string &code) {
     char *file_name = (char *)malloc(50);
-    if (FindLastGame(PLID, file_name) == 0)
-    {
+    if (FindLastGame(PLID, file_name) == 0) {
         free(file_name);
         return 0;
     }
     FILE *fp = fopen(file_name, "r");
-    if (fp == NULL)
-    {
+    if (fp == NULL) {
         free(file_name);
         return 0;
     }
     char code_buffer[50];
     int nB, nW, time;
-    // Skip the first line
     char buffer[256];
-    printf("ola find play anteds primeira linha");
-    if (fgets(buffer, sizeof(buffer), fp) == NULL)
-    {
+    if (fgets(buffer, sizeof(buffer), fp) == NULL) {
         fclose(fp);
         free(file_name);
         return 0;
     }
-    // Read the remaining lines
-    while (fscanf(fp, "T: %s %d %d %d\n", code_buffer, &nB, &nW, &time) != EOF)
-    {
-        printf("ola find play dentro do while");
+    while (fscanf(fp, "T: %s %d %d %d\n", code_buffer, &nB, &nW, &time) != EOF) {
         string code_str(code_buffer);
-        if (code_str.substr(0, 4).compare(code.substr(0, 4)) == 0)
-        {
+        if (code_str.substr(0, 4).compare(code.substr(0, 4)) == 0) {
             fclose(fp);
             free(file_name);
             return 1;
         }
     }
-    printf("ola find play fora do while");
     fclose(fp);
     free(file_name);
     return 0;
 }
 
-void format_scb(int file_size, string &buffer)
+void format_scb(string &buffer)
 {
     buffer = "-------------------------------- TOP 10 SCORES --------------------------------\n";
     buffer += "                 SCORE PLAYER     CODE    NO TRIALS   MODE\n";
@@ -473,7 +458,6 @@ void format_scb(int file_size, string &buffer)
         buffer += "             " + n + to_string(score_number) + " - " + *it + "\n";
         score_number++;
     }
-    file_size = buffer.size();
 }
 
 void match_code(const string &code1, const string &code2, int &nW, int &nB)
@@ -604,9 +588,7 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
     }
 }
 
-
-
-void format_str(string &scorefilename, int file_size, string &buffer, string &code)
+void format_str(string &scorefilename, string &buffer, string &code)
 {
     buffer = "";
     ifstream file(scorefilename);
@@ -628,65 +610,78 @@ void format_str(string &scorefilename, int file_size, string &buffer, string &co
         string plid, mode, secret_code, timeout, init_date, init_time, init_epoch_str;
         ss >> plid >> mode >> secret_code >> timeout >> init_date >> init_time >> init_epoch_str;
 
-        // Extract game initiation time from filename
-        size_t pos = scorefilename.find_last_of('/');
-        string filename = (pos == string::npos) ? scorefilename : scorefilename.substr(pos + 1);
-        string init_time_str = init_date + " " + init_time; // Combine date and time
-        string termination_type = filename.substr(16, 1);   // Extract termination type (W, F, Q, T)
-
-        if (code == "RST OK")
+        if (code == "RST ACT")
         {
             buffer += "     Active game found for player " + plid + "\n";
-            buffer += "Game initiated: " + init_time_str + " with " + timeout + " seconds to be completed\n\n";
             buffer += "     --- Transactions found: " + to_string(lines.size() - 1) + " ---\n\n";
 
             for (size_t i = 1; i < lines.size(); ++i)
             {
                 stringstream ss(lines[i]);
-                string trial_code;
+                string trial_code, trial;
                 int nb, nw, trial_time;
-                ss >> trial_code >> nb >> nw >> trial_time;
+                ss >> trial >> trial_code >> nb >> nw >> trial_time;
                 buffer += "Trial: " + trial_code + ", nB: " + to_string(nb) + ", nW: " + to_string(nw) + " at " + to_string(trial_time) + "s\n";
             }
-
-            buffer += "\n  -- " + timeout + " seconds remaining to be completed --\n";
+            int timeleft = stoi(timeout) - (time(nullptr) - stoi(init_epoch_str));
+            buffer += "\n  -- " + to_string(timeleft) + " seconds remaining to be completed --\n";
         }
         else if (code == "RST FIN")
         {
             buffer += "Last finalized game for player " + plid + "\n";
-            buffer += "Game initiated: " + init_time_str + " with " + timeout + "s to be completed\n";
+            buffer += "Game initiated: " + init_time + " with " + timeout + "s to be completed\n";
             buffer += "Mode: " + mode + "  Secret code: " + secret_code + "\n\n";
             buffer += "     --- Transactions found: " + to_string(lines.size() - 2) + " ---\n";
 
-            for (size_t i = 1; i < lines.size() - 1; ++i)
+            string termination_type;
+            stringstream ss_filename(scorefilename);
+            string part;
+            while (ss_filename >> part) {
+                // The termination type is the last part of the filename before the extension
+                if (part.find(".txt") != string::npos) {
+                    termination_type = part[part.size() - 5]; // Extract the termination type (W, F, Q, T)
+                }
+            }
+            
+            for (size_t i = 1; i < lines.size()-1; ++i)
             {
                 stringstream ss(lines[i]);
-                string trial_code;
+                string trial_code, trial;
                 int nb, nw, trial_time;
-                ss >> trial_code >> nb >> nw >> trial_time;
-                buffer += "Trial: " + trial_code + ", nB: " + to_string(nb) + ", nW: " + to_string(nw) + "   " + to_string(trial_time) + "s\n";
+                ss >> trial >> trial_code >> nb >> nw >> trial_time;
+                buffer += "Trial: " + trial_code + ", nB: " + to_string(nb) + ", nW: " + to_string(nw) + " at " + to_string(trial_time) + "s\n";
             }
 
-            stringstream ss_last(lines.back());
+            // Extract end date, end time, and duration from the last line
+            stringstream ss_end(lines.back());
             string end_date, end_time, duration_str;
-            ss_last >> end_date >> end_time >> duration_str;
+            ss_end >> end_date >> end_time >> duration_str;
+
             buffer += "     Termination: " + get_termination_type(termination_type) + " at " + end_date + " " + end_time + ", Duration: " + duration_str + "s\n";
+
+            // Format the filename and save it in the GAMES/123456 directory
+            string new_filename = "GAMES/"+ plid +"/" + end_date + " " + end_time + " " + termination_type + ".txt";
+            ofstream new_file(new_filename);
+            if (new_file.is_open())
+            {
+                new_file << buffer;
+                new_file.close();
+            }
         }
     }
 }
 
-int validate_args(int argc, char *argv[], const char *&gs_port, bool &verbose)
-{
+
+int validate_args(int argc, char *argv[], const char *&gs_port, bool &verbose){
     // Parse command-line arguments
-    for (int i = 1; i < argc; i++)
-    {
+    for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-p") == 0 && i + 1 < argc)
             gs_port = argv[++i];
 
         else if (strcmp(argv[i], "-v") == 0)
             verbose = true;
-        else
-        {
+
+        else {
             cerr << "Usage: " << argv[0] << " [-p GSport] [-v]" << endl;
             return 1;
         }
@@ -694,11 +689,7 @@ int validate_args(int argc, char *argv[], const char *&gs_port, bool &verbose)
     return 0;
 }
 
-
-game_player *find_player(const string &plid)
-{
-    cout << "Finding player with PLID: " << plid << endl;
-
+game_player *find_player(const string &plid) {
     // Verifica se o vetor está vazio
     if (players.empty()) {
         cout << "Player list is empty. Cannot find any player." << endl;

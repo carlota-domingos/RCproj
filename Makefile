@@ -10,8 +10,8 @@ SRC = GS.cpp lib.cpp
 # Nome do executável
 EXEC = server 
 
-gm = SERVER/GAMES 
-sc = SERVER/SCORES 
+gm = SERVER
+
 
 # Regra padrão: compilar o servidor
 all: $(EXEC)
@@ -23,7 +23,7 @@ $(EXEC): $(SRC)
 # Regra para limpar os arquivos compilados
 clean:
 	rm -f $(EXEC)
-	rm -rf $(gm) $(sc)
+	rm -rf $(gm) 
 
 # Garante que a regra 'clean' seja chamada corretamente
 .PHONY: all clean
