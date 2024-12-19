@@ -31,11 +31,11 @@ $(SERVER_EXEC): $(SERVER_SRC)
 
 # Regra para executar o player dentro do diretório
 player: $(PLAYER_EXEC)
-	cd $(PLAYER_DIR) && ./player
+	cd $(PLAYER_DIR) && ./player $(ARGS)
 
 # Regra para executar o servidor dentro do diretório
 server: $(SERVER_EXEC)
-	cd $(SERVER_DIR) && ./server
+	cd $(SERVER_DIR) && ./server $(ARGS)
 
 # Regra para limpar os arquivos compilados
 clean:
