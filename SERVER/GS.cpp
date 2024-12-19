@@ -412,12 +412,12 @@ int main(int argc, char *argv[]) {
             //     pid_t pid = fork();
                 
                 // if (pid < 0) { 
-                    perror("Erro ao criar processo filho");
-                    close(client_fd);
-                    continue;
+                    // perror("Erro ao criar processo filho");
+                    // close(client_fd);
+                    // continue;
                     
                 // } else if (pid == 0) { // Processo filho
-                    close(fd_tcp); 
+                    //close(fd_tcp); 
                     char *buffer = (char *)malloc(BUFFER_SIZE);
                     if (!buffer) {
                         cerr << "Falha na alocação de memória no processo filho" << endl;
@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
                     }
                     free(buffer);
                     close(client_fd);
-                    exit(0); 
+                    send_string.clear();
                 // } else {
                 //     close(client_fd); 
                 // }
