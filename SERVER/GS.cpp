@@ -336,8 +336,10 @@ int main(int argc, char *argv[]) {
     else 
         cout << "Servidor TCP inicializado na porta " << gs_port << endl;
 
-    fd_set read_fds;
-    int max_fd = max(fd_udp, fd_tcp);
+       
+
+    int max_fd;
+    fd_set activefds;
 
     while (true) {
         char *buffer = (char *)malloc(BUFFER_SIZE);
@@ -349,12 +351,14 @@ int main(int argc, char *argv[]) {
             exit(1);
         }
         string buffer_r(BUFFER_SIZE_GS, '\0');
-        FD_ZERO(&read_fds);
-        FD_SET(fd_udp, &read_fds);
-        FD_SET(fd_tcp, &read_fds);
+        FD_ZERO(&activefds);
+        FD_SET(fd_udp, &activefds);
+        FD_SET(fd_tcp, &activefds);
+
+        fd_set readfds = activefds;
 
         max_fd = fd_udp > fd_tcp ? fd_udp : fd_tcp;
-        int activity = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+        int activity = select(max_fd + 1, &readfds, NULL, NULL, NULL);
         if (activity < 0) {
             perror("select");
             free(buffer);
@@ -362,7 +366,7 @@ int main(int argc, char *argv[]) {
         }
         string args_verbose(BUFFER_SIZE_GS, '\0');
         string verbose_str(BUFFER_SIZE_GS, '\0');
-        if (FD_ISSET(fd_udp, &read_fds)) {
+        if (FD_ISSET(fd_udp, &readfds)) {
             string send_string(BUFFER_SIZE, '\0');
             struct sockaddr_in addr_udp;
             socklen_t addrlen_udp = sizeof(addr_udp);
@@ -408,7 +412,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        if (FD_ISSET(fd_tcp, &read_fds)) {
+        if (FD_ISSET(fd_tcp, &readfds)) {
             struct sockaddr_in addr_tcp;
             socklen_t addrlen_tcp = sizeof(addr_tcp);
             int client_fd = accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp);
