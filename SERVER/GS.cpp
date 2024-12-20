@@ -107,7 +107,7 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
         if (is_empty) {
             send_buffer = "RSS EMPTY\n";
         } else {
-            send_buffer = "RSS OK";
+            send_buffer = "RSS OK ";
             string filename;
             string file_buffer;
             format_scb(file_buffer);
