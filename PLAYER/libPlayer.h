@@ -19,9 +19,9 @@ using namespace std;
 
 class game_player {
 public:
-    std::string plid;
-    int nT;
-    bool active = false;
+    std::string plid;     // Identificador único do jogador.
+    int nT;               //Número de tentativas feitas pelo jogador contadas pelo player
+    bool active = false;  //ndica se o jogador está ativo no jogo
 
     game_player(const std::string &id);
     void finish();
@@ -39,7 +39,6 @@ int check_active_game(string &, game_player curr_game);
 int add_args(string &msg, int code, game_player curr_game);
 bool valid_time(const string& str);
 int code_val(const string& code);
-
 
 
 #endif

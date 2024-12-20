@@ -144,7 +144,8 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
 
 // Função main do player
 int main(int argc, char *argv[]){
-    char *gs_ip = strdup("193.136.138.142");
+    char *gs_ip = strdup("localhost");
+    //193.136.138.142
     char *gs_port = strdup("58081");
 
     if (!gs_ip || !gs_port) {

@@ -21,27 +21,33 @@
 using namespace std;
 #define BUFFER_SIZE 128
 
-// Class do jogador e funções 
+
+// Classe que representa o jogador e suas funcionalidades
 game_player::game_player(const std::string &id) : plid(id), nT(1) {}
 
+
+// Finaliza o jogo, desativando o jogador ativo.
 void game_player::finish() {
     active = false;
 }
 
+// Reseta o estado do jogador, reativando e reiniciando o número de tentativas.
 void game_player::reset() {
     nT = 1;
     active = true;
 }
 
+// Incrementa o número de tentativas do jogador
 void game_player::next_try() {
     nT++;
 }
 
+// Verifica se a tentativa atual do jogador é igual à tentativa esperada pelo servidor.
 bool game_player::same_try(int server_try) const {
     return nT == server_try;
 }
 
-//funcao para ler do terminal
+// Lê uma mensagem do terminal e armazena em `msg`
 int get_msg(string &msg) {
     char c;
     int i = 0;
@@ -55,7 +61,7 @@ int get_msg(string &msg) {
     return 0;
 }
 
-//Função para criar ficheiros
+// Cria um arquivo no diretório especificado e retorna o fluxo de saída.
 ofstream create_file(const string& directory, const string& filename) {
     string file_path = directory + "/" + filename;
     ofstream file(file_path);
@@ -66,7 +72,7 @@ ofstream create_file(const string& directory, const string& filename) {
     return file;
 }
 
-//Função salvar uma mensagem num ficheiro
+// Salva uma mensagem num arquivo. 
 int get_file_msg(string &msg, string &file_out) {
     istringstream stream(msg);
     string curr;
@@ -78,12 +84,9 @@ int get_file_msg(string &msg, string &file_out) {
         if (count == 2) 
             break;
         count++;
-        //printf ("curr: %s\n", curr.c_str());
     }
-
     if (!curr.empty()) {
         try {
-            //printf ("curr: %s\n", curr.c_str());
             filename = curr;
             stream >> size;
             int num_chars = stoi(size);
@@ -112,7 +115,7 @@ int get_file_msg(string &msg, string &file_out) {
     return 0;
 }
 
-// Função que verifica se o tempo dado é valido
+// Verifica se o tempo fornecido é válido (entre 0 e 600 segundos).
 bool valid_time(const string& str) {
     try {
         int num = stoi(str);
@@ -122,20 +125,20 @@ bool valid_time(const string& str) {
     }
 }
 
-//Função que remove espaços
+// Remove espaços extras de uma string (do início, do final e entre palavras).
 string rm_spaces(const string& str) {
     string trimmed = regex_replace(str, regex("^\\s+|\\s+$"), "");
     return regex_replace(trimmed, regex("\\s+"), " ");
 }
 
 
-// Função que verifica se o codigo dado é valido
+// Verifica se o código fornecido segue o padrão válido.
 int code_val(const string& code) {
     regex pattern("^([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP])");
     return regex_match(code, pattern);
 }
 
-// Função para processar o buffer recebido e converter num comando específico
+// Processa o buffer recebido e converte num comando específico do sistema.
 int case_terminal(string &buffer){
     buffer= rm_spaces(buffer);
     //Caso scoreboard
@@ -192,7 +195,6 @@ int case_terminal(string &buffer){
             return 6;
         }
     }
-
     printf("Erro: Mensagem introduzida nao esta de acordo com as normas\n");
     buffer = "";
     return -1;  
@@ -208,7 +210,7 @@ int check_active_game(string &sendmsg, game_player curr_game){
     return 0;
 }
 
-// Função que complementa as mensagens com informacões do jogador ativo
+// Adiciona informações do jogador ativo às mensagens enviadas ao servidor.
 int add_args(string &msg, int code, game_player curr_game){
     if (code <= 2)
         return 0;
@@ -220,8 +222,7 @@ int add_args(string &msg, int code, game_player curr_game){
         }
         size_t pos = msg.find("nT");
         if (pos != string::npos)
-            msg.replace(pos, 2, std::to_string(curr_game.nT));
-        
+            msg.replace(pos, 2, std::to_string(curr_game.nT));        
     }
 
     size_t pos = msg.find("PLID");

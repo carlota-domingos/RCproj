@@ -392,9 +392,10 @@ int main(int argc, char *argv[]) {
             args_verbose.clear();
             verbose_str.clear();
             
+            int buffer_size = send_string.size();
             const char *buffer_send = send_string.c_str();
             printf("Mensagem enviada: '%s'\n", buffer_send);
-            if (send_message_server(fd_udp, buffer_send, BUFFER_SIZE, addr_udp, addrlen_udp) < 0) {
+            if (send_message_server(fd_udp, buffer_send, buffer_size, addr_udp, addrlen_udp) < 0) {
                 perror("Erro ao enviar mensagem UDP");
                 free(buffer);
                 send_string.clear();
@@ -449,10 +450,11 @@ int main(int argc, char *argv[]) {
                 args_verbose.clear();
                 verbose_str.clear();
                 
-                
+                int buffer_size = send_string.size();
                 const char *buffer_send = send_string.c_str();
+
                 printf("Mensagem enviada: '%s'\n", buffer_send);
-                if (send_message_tcp_server(client_fd, buffer_send, BUFFER_SIZE_GS) < 0) {
+                if (send_message_tcp_server(client_fd, buffer_send, buffer_size) < 0) {
                     perror("Erro ao enviar mensagem TCP");
                 }
                 free(buffer);
