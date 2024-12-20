@@ -112,10 +112,7 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
             }
             if (buffer.substr(9, 1) == "4") {
                 cout << "Jogo Ganho !" << endl;
-                if (buffer.size() > 15){
-                    cout << "Codigo: " << buffer.substr(13,7) << endl;
-                    curr_game.finish();
-                }
+                curr_game.finish();
             }
         }
             else if (buffer == "RTR ERR\n")

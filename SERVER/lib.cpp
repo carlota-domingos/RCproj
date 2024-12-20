@@ -540,7 +540,7 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
                 string code_final;
                 player-> add_spaces(code_final);
                 // cout<< "Número de tentativas esgotado." << endl;
-                send_buffer = "RTR ENT " + code + "\n";
+                send_buffer = "RTR ENT " + code_final + "\n";
                 player->finish("F", play_time);
                 return;
             }
@@ -549,10 +549,8 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
 
                 // cout<< "Jogador com PLID " << player->plid << " acertou no código." << endl;
                 player->next_try();
-                player->file->new_line(code, nB, nW, play_time);
-                string code_final;
-                player-> add_spaces(code_final);                
-                send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW) + " " + code_final + "\n";
+                player->file->new_line(code, nB, nW, play_time);              
+                send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW)+ "\n";
                 player->finish("W", play_time);
                 return;
             }
