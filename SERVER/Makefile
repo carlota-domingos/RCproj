@@ -27,5 +27,4 @@ clean:
 	rm -f *.txt
 	rm -f *.o
 
-# Garante que a regra 'clean' seja chamada corretamente
 .PHONY: all clean

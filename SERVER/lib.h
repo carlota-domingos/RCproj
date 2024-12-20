@@ -36,7 +36,7 @@ public:
     string plid;              // Identificador único do jogador.
     int time;                 // Tempo total do jogo definido pelo jogador.
     int nT;                   // Número de tentativas feitas pelo jogador contadas pelo servidor
-    string codigo = "";       // 
+    string codigo = "";       // codigo do jogo atual do jogador 
     bool ativo = false;       // Indica se o jogador está ativo no jogo (true caso ativo)
     int score;                // Pontuação atual do jogador.  
     game_file *file;          // Ponteiro para o objeto game_file associado ao jogador (gerencia dados do jogo).  

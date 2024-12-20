@@ -24,17 +24,14 @@
 
 using namespace std;
 
-
+// Função que inicializa um novo jogo para um jogador. Retorna 1 se o jogador já estiver ativo, 0 caso contrário.
 int init_game(string &PLID, int time, time_t play_time){
     game_player *player = find_player(PLID);
     PLID = PLID.substr(0, 6);
     if (player && player->ativo) {
-        //cout << "Jogador com PLID " << PLID << " já está ativo." << endl;
         return 1;
     }
     else if (player && !player->ativo) {
-        //cout << "Entrou no caso START NEW GAME com PLID: " << PLID << " e tempo_max: " << time << endl;
-
         char colour_code[NUM_COLORS + 1]; 
         generate_random_colors(colour_code);
         string colour_code_str(colour_code);
@@ -42,49 +39,41 @@ int init_game(string &PLID, int time, time_t play_time){
         player->start_game(time, colour_code_str, file, play_time);
         return 0;
     }
-    // cout << "Entrou no caso START NEW GAME com PLID: " << PLID << " e tempo_max: " << time << endl;
     char colour_code[NUM_COLORS + 1]; 
 
     generate_random_colors(colour_code);
     string colour_code_str(colour_code);
     game_player new_player(PLID);
     game_file *file = new game_file(PLID, "P", colour_code, to_string(time), play_time);
-    //cout << "tempo inicio jogo: " << play_time << endl;
     new_player.start_game(time, colour_code_str, file, play_time);
     players.emplace_back(new_player);
-    //new_player.display_info();
     return 0;
 }
 
+// Função para inicializar um jogo no modo debug com um código predefinido.
 int init_game_debug(string &PLID, int time, string &code, time_t play_time){
     game_player *player = find_player(PLID);
     PLID = PLID.substr(0, 6);
     if (player && player->ativo) {
-        //cout << "Jogador com PLID " << PLID << " já está ativo." << endl;
         return 1;
     }
     else if (player && !player->ativo)  {
-        //cout << "Entrou no caso START NEW GAME com PLID: " << PLID << " e tempo_max: " << time << endl;
         game_file *file = new game_file(PLID, "D", code, to_string(time), play_time);
         player->start_game(time, code, file, play_time);
-        //player->display_info();
         return 0;
     }
-    //cout << "Entrou no caso START NEW GAME com PLID: " << PLID << " e tempo_max: " << time << endl;
     game_player new_player(PLID);
     game_file *file = new game_file(PLID, "D", code, to_string(time), play_time);
     new_player.start_game(time, code, file, play_time);
     players.emplace_back(new_player);
-    //new_player.display_info();
     return 0;
 }
 
+// Função que processa comandos recebidos para interagir com os jogadores e jogos.
 int case_player(string &buffer, string &send_buffer, time_t play_time, string &args_verbose) {
-    string PLID; // Para armazenar o PLID
+    string PLID; 
     string rqstype;
-    //cout << "Buffer recebido: '" << buffer << "'" << endl;
-    //// printf("Tamanho do buffer: %zu\n", buffer.size());
-    // Caso SCORES
+    // Caso Scoreboard
     if (buffer.compare("SSB\n") == 0) {
         struct dirent **filelist;
         int nentries;
@@ -113,11 +102,11 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
             int file_size = file_buffer.size();
             filename = "SCORES_" + get_str_time(play_time, 1) + ".txt";
             send_buffer += filename + " " + to_string(file_size) + " " + file_buffer + "\n";
-            //create file with scores
+            
         }
         rqstype = "Scoreboard";
     }
-    // Caso GAMES
+    // Caso show trials
     else if (buffer.substr(0, 4).compare("STR ") == 0) {
         regex pattern("^STR (\\d{6})\n$");
         smatch matches;
@@ -132,23 +121,18 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
                 char gamefilename_c[256];
                 FindLastGame(PLID, gamefilename_c);
                 gamefilename = string(gamefilename_c);
-                // cout << "ficheiro do jogo: " << gamefilename << endl;
                 if (player->ativo)
                 {
                     if (player->game_time_act(play_time) == false) {
-                        // cout << "Tempo esgotado para o jogador." << endl;
                         send_buffer = "RST FIN ";
                         player->finish("T", play_time);
                         FindLastGame(PLID, gamefilename_c);
                         gamefilename = string(gamefilename_c);
-                        // cout << "ficheiro do jogo: " << gamefilename << endl;
                         string code = "RST FIN";
                         format_str(gamefilename,  file_buffer, code);
                         file_size = file_buffer.size();
                         send_buffer += filename + " " + to_string(file_size) + " " + file_buffer + "\n";
                     } else{
-
-                        //cout << "Jogador com PLID " << PLID << " está ativo." << endl;
                         send_buffer = "RST ACT ";
                         string code = "RST ACT";
                         format_str(gamefilename,  file_buffer, code);
@@ -156,7 +140,6 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
                         send_buffer += filename + " " + to_string(file_size) + " " + file_buffer + "\n";
                     }
                 } else  {
-                    // cout << "Jogador com PLID " << PLID << " nao está ativo." << endl;
                     send_buffer = "RST FIN ";
                     string code = "RST FIN";
                     format_str(gamefilename, file_buffer, code);
@@ -164,17 +147,15 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
                     send_buffer += filename + " " + to_string(file_size) + " " + file_buffer +"\n";
                 }
             } else {
-                // cout << "Jogador com PLID " << PLID << " não encontrado." << endl;
                 send_buffer = "RST NOK\n";
             }
         }
         else {
-            // cout << "Sintaxe do PLID inválida." << endl;
             send_buffer = "RST NOK\n";
         }
         rqstype = "Show Trials";
     }
-    // Caso QUIT da resert as infos sobre este player
+    // Caso QUIT da resert as infos sobreo jogo corrente do player 
     else if (buffer.substr(0, 4).compare("QUT ") == 0) {
         regex pattern("^QUT (\\d{6})\n$");
         smatch matches;
@@ -184,7 +165,6 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
             game_player *player = find_player(PLID);
             if (player) {
                 if (player->ativo) {
-                    //cout << "Jogador com PLID " << PLID << " está ativo." << endl;
                     string code_final = "";
                     player->add_spaces(code_final);
                     send_buffer = "RQT OK " + code_final + "\n";
@@ -192,25 +172,19 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
                     player->reset(PLID);
                 }
                 else {
-                    // cout << "Jogador com PLID " << PLID << " não está ativo." << endl;
                     send_buffer = "RQT NOK\n";
-                }
-                //cout << "Informações do jogador após reset:" << endl;
-                //player->display_info();
-                
+                }                
             }
             else {
-                // cout << "Jogador com PLID " << PLID << " não encontrado." << endl;
                 send_buffer = "RQT NOK\n";
             }
         }
         else {
-            // cout << "Sintaxe do PLID inválida." << endl;
             send_buffer = "RQT ERR\n";
         }
         rqstype = "Quit Game";
     }
-    // Caso DEBUG
+    // Caso DEBUG start new game
     else if (buffer.substr(0, 4).compare("DBG ") == 0) {
         regex pattern("^DBG (\\d{6}) (\\d{1,3}) (.*)\n$");
         smatch matches;
@@ -220,7 +194,6 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
             string time = matches[2];
             string code = matches[3];
             if (!valid_time(time) || !code_val(code)) {
-                // cout << "Tempo ou código inválido" << endl;
                 send_buffer = "RDB ERR\n";
             }
             else 
@@ -233,22 +206,19 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
             
         }
         else {
-            // cout << "Sintaxe Invalida" << endl;
             send_buffer = "RDB ERR\n";
         }
         rqstype = "Start new Game Debug";
     }
-    // Caso START NEW GAME
+    // Caso start new game
     else if (buffer.substr(0, 4).compare("SNG ") == 0) {
         regex pattern("^SNG (\\d{6}) (\\d{1,3})\n$");
         smatch matches;
         int tempo_max;
         if (regex_match(buffer, matches, pattern)) {
-            // printf("Entrou no caso START NEW GAME\n");
             PLID = matches[1];
             string tempo = matches[2];
             if (!valid_time(tempo)) {
-                // cout << "Tempo máximo inválido" << endl;
                 send_buffer = "RSG ERR\n";
             }
             else  {
@@ -261,25 +231,22 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
             }
         }
         else {
-            // cout << "PLID ou tempo inválido" << endl;
             send_buffer = "RSG ERR\n";
         }
         rqstype = "Start new Game";
-    } // Caso TRY
+    }
+    // Caso TRY
     else if (buffer.substr(0, 4).compare("TRY ") == 0)  {
         regex pattern("^TRY (\\d{6}) ([RGBYOP]) ([RGBYOP]) ([RGBYOP]) ([RGBYOP]) (\\d{1})\\s\n?*$");
         smatch matches;
         if (regex_match(buffer, matches, pattern)) {
             PLID = matches[1];
             string code = matches[2].str() + matches[3].str() + matches[4].str() + matches[5].str() + '\0';
-            //cout << "Code: " << code << endl;
             string nT = matches[6];
             game_player *player = find_player(PLID);
             process_player(player, code, stoi(nT), send_buffer, play_time);
-            //// printf("Entrou no caso TRY\n");
         }
         else {
-            // cout << "sintaxe invalida" << endl;
             send_buffer = "RTR ERR\n";
         }
         rqstype = "Try";
@@ -289,8 +256,6 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
         send_buffer = "ERR\n";
         return -1; 
     }
-    //cout << "ta no final " << endl;
-    //cout << "Mensagem a enviar: '" << send_buffer << "'" << endl;
     if(rqstype != "Scoreboard")
         args_verbose = "[Player ID: "+ PLID + "] [Type of Request: " + rqstype + "]";
     else 
@@ -298,8 +263,10 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
     return 0; 
 }
 
+// Função principal que inicializa o servidor e lida com conexões UDP/TCP.
 int main(int argc, char *argv[]) {
-    char *gs_port = (char *)malloc(6 * sizeof(char)); // Allocate memory for the port
+    // Inicializa a porta do servidor com valor padrão e aloca memória.
+    char *gs_port = (char *)malloc(6 * sizeof(char)); 
     if (!gs_port) {
         cerr << "Memory allocation failed" << endl;
         return 1;
@@ -313,7 +280,7 @@ int main(int argc, char *argv[]) {
     }
     create_directories();
 
-    // Inicializa o servidor UDP
+    // Inicializa os servidores UDP e TCP.
     int fd_udp = init_socket_server(gs_port);
     if (fd_udp < 0)
         return 1;
@@ -333,6 +300,7 @@ int main(int argc, char *argv[]) {
     int max_fd;
     fd_set activefds;
 
+    // Loop principal do servidor 
     while (true) {
         char *buffer = (char *)malloc(BUFFER_SIZE);
         if (buffer == nullptr) {
@@ -359,10 +327,13 @@ int main(int argc, char *argv[]) {
         }
         string args_verbose(BUFFER_SIZE_GS, '\0');
         string verbose_str(BUFFER_SIZE_GS, '\0');
+
+        // Verifica se houve atividade no socket UDP
         if (FD_ISSET(fd_udp, &readfds)) {
             string send_string(BUFFER_SIZE, '\0');
             struct sockaddr_in addr_udp;
             socklen_t addrlen_udp = sizeof(addr_udp);
+            // Recebe mensagem via UDP
             ssize_t n_udp = receive_message_server(fd_udp, buffer, BUFFER_SIZE, addr_udp, addrlen_udp);
             if (n_udp == -1) {
                 perror("Erro ao receber mensagem UDP");
@@ -370,7 +341,6 @@ int main(int argc, char *argv[]) {
                 free(buffer);
                 break;
             }
-            cout << "Mensagem recebida: " << buffer << endl;
 
             time_t now = time(0);
             buffer_r = string(buffer, n_udp);
@@ -392,9 +362,9 @@ int main(int argc, char *argv[]) {
             args_verbose.clear();
             verbose_str.clear();
             
+            // Envia a resposta de volta ao cliente UDP
             int buffer_size = send_string.size();
             const char *buffer_send = send_string.c_str();
-            printf("Mensagem enviada: '%s'\n", buffer_send);
             if (send_message_server(fd_udp, buffer_send, buffer_size, addr_udp, addrlen_udp) < 0) {
                 perror("Erro ao enviar mensagem UDP");
                 free(buffer);
@@ -408,6 +378,8 @@ int main(int argc, char *argv[]) {
         if (FD_ISSET(fd_tcp, &readfds)) {
             struct sockaddr_in addr_tcp;
             socklen_t addrlen_tcp = sizeof(addr_tcp);
+
+            // Aceita conexão de um cliente TCP
             int client_fd = accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp);
             if (client_fd >= 0) {
                 char *buffer = (char *)malloc(BUFFER_SIZE);
@@ -416,6 +388,8 @@ int main(int argc, char *argv[]) {
                     close(client_fd);
                     exit(1);
                 }
+
+                // Lê a mensagem do cliente TCP
                 ssize_t n_tcp = read_message_tcp_server(client_fd, buffer, BUFFER_SIZE);
                 if (n_tcp <= 0) {
                     if (n_tcp == 0) {
@@ -427,7 +401,6 @@ int main(int argc, char *argv[]) {
                     close(client_fd);
                     exit(1);
                 }
-                cout << "Mensagem recebida: " << buffer << endl;
                 string buffer_r(buffer, n_tcp);
                 string send_string(BUFFER_SIZE_GS, '\0');
                 time_t now = time(0);
@@ -435,6 +408,8 @@ int main(int argc, char *argv[]) {
                 char ip_str[INET_ADDRSTRLEN];
                 inet_ntop(AF_INET, &(addr_tcp.sin_addr), ip_str, INET_ADDRSTRLEN);
                 
+
+                // Processa o buffer para ações relacionadas ao jogador
                 if (case_player(buffer_r, send_string, now, args_verbose) != 0) {
                     cerr << "Mensagem TCP inválida!" << endl;
                     send_string = "ERR\n";
@@ -453,7 +428,6 @@ int main(int argc, char *argv[]) {
                 int buffer_size = send_string.size();
                 const char *buffer_send = send_string.c_str();
 
-                printf("Mensagem enviada: '%s'\n", buffer_send);
                 if (send_message_tcp_server(client_fd, buffer_send, buffer_size) < 0) {
                     perror("Erro ao enviar mensagem TCP");
                 }

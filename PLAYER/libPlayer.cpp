@@ -61,7 +61,7 @@ int get_msg(string &msg) {
     return 0;
 }
 
-// Cria um arquivo no diretório especificado e retorna o fluxo de saída.
+// Cria um arquivo no diretório especificado e retorna o path
 ofstream create_file(const string& directory, const string& filename) {
     string file_path = directory + "/" + filename;
     ofstream file(file_path);
@@ -72,7 +72,7 @@ ofstream create_file(const string& directory, const string& filename) {
     return file;
 }
 
-// Salva uma mensagem num arquivo. 
+// Guarda uma mensagem num arquivo. 
 int get_file_msg(string &msg, string &file_out) {
     istringstream stream(msg);
     string curr;

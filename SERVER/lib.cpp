@@ -29,9 +29,10 @@
 using namespace std;
 
 vector<game_player> players;
-//-------------------------------------------------------------------CLASSE GAME_FILE------------------------------------------------------
+//-------------------------------------------------------------CLASSE GAME_FILE------------------------------------------------------
 
-//FUnção construtora da classe game_file
+//Função construtora da classe game_file
+// Inicializa um arquivo de jogo com os detalhes fornecidos e grava a linha inicial no arquivo.
 game_file::game_file(const string &id, const string &mode, const string &code, const string &timeout, time_t time_i){
     plid = id;
     if (mode == "P")
@@ -54,7 +55,7 @@ game_file::game_file(const string &id, const string &mode, const string &code, c
     close(fd_game);
 }
 
-// Função que grava uma nova linha no arquivo de jogo com informações sobre o código
+// Função que grava uma nova linha no arquivo de jogo com informações sobre o código e jogadas
 void game_file::new_line(const string &code, int nb, int nw, time_t play_time) {
     time_t game_time = play_time - time_init;
     string time_str = to_string(game_time);
@@ -68,7 +69,7 @@ void game_file::new_line(const string &code, int nb, int nw, time_t play_time) {
     close(fd_game);
 }
 
-//Função que lê o arquivo de jogo e retorna o código de jogo
+// Função que lê o arquivo de jogo e retorna o código inicial registrado
 string game_file::get_code_file() {
     int fd_game = open(path_file.c_str(), O_RDONLY);
     if (fd_game == -1) {
@@ -95,11 +96,11 @@ string game_file::get_code_file() {
     close(fd_game);
     return code;
 }
-// Função que vai buscar o numero de tentativas ao ficheiro
+
+// Função que retorna o número de tentativas registradas no arquivo de jogo
 int game_file::get_nT_file() {
     int fd_game = open(path_file.c_str(), O_RDONLY);
     if (fd_game == -1) {
-        // printf("get_nT_file\n");
         perror("Erro ao abrir o ficheiro de jogo");
         
     }
@@ -111,7 +112,7 @@ int game_file::get_nT_file() {
     return nT - 1;
 }
 
-// Função que formata o time
+// Função que formata o tempo como string, dependendo do modo especificado
 string game_file::get_str_time(time_t time, int mode) {
     char buffer[20];
     struct tm *timeinfo;
@@ -126,15 +127,13 @@ string game_file::get_str_time(time_t time, int mode) {
     return string(buffer);
 }
 
-// Função que trata de tudo para terminar o jogo
+// Função que finaliza o jogo, renomeia o arquivo e registaa o resultado no sistema
 void game_file::finish_game(time_t finishtime, const string &term, const string &score) {
-    // cout<< "Jogo terminado. ficheiro criado " << endl;
     time_t game_time = finishtime - time_init;
     string game_time_str = to_string(game_time);
     string last_line = get_str_time(finishtime, 0) + " " + game_time_str + "\n";
     string new_path = "SERVER/GAMES/" + plid + "/" + get_str_time(finishtime, 1) + "_" + term + ".txt";
     create_game_dir(plid);
-    //renames the file
     if (rename(path_file.c_str(), new_path.c_str()) == -1) {
         perror("Erro ao renomear o ficheiro de jogo");
         
@@ -174,12 +173,12 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
 }
 
 
-//-----------------------------------------------------------CLASSE GAME_PLAYER-------------------------------------------------------
+//---------------------------------------------------------------CLASSE GAME_PLAYER-------------------------------------------------------
 
-// Função consturura do game_player
+// Construtor da classe game_player
 game_player::game_player(const string &id) : plid(id), ativo(false){}
 
-// Função que inicia as informações para o jogo
+// Função que inicia o jogo com informações fornecidas pelo jogador
 void game_player::start_game(int tempo, string &cores, game_file *gfile, time_t tempo_inicio) {
     time = tempo;
     tempo_inicio_jogo = tempo_inicio;
@@ -189,27 +188,28 @@ void game_player::start_game(int tempo, string &cores, game_file *gfile, time_t 
     file = gfile;
 }
 
-// Função que envia o tempo do inicio do jogo
+// Função que retorna o tempo de início do jogo
 time_t game_player::get_tempo_inicio_jogo() const {
     return tempo_inicio_jogo;
 }
 
-// Função que diz se já ultrapassou o tempo de jogo maximo (dado pelo player anteriormente)
+// Função que verifica se o tempo de jogo ainda está dentro do limite
 bool game_player::game_time_act(time_t now) {
     return (now - tempo_inicio_jogo) < time;
 }
 
-// Função que da reset as informações
+// Função que reseta as informações do jogo
 void game_player::reset(const string &id) {
     nT = 1;
     codigo = "";
 }
 
-// Função que aumenta o número de tentativas
+// Função que incrementa o número de tentativas do jogador
 void game_player::next_try() {
     nT++;
 }
 
+// Função que adiciona espaços ao código de cores
 void game_player::add_spaces(string &str) {
     for (int i = 0; i<3 ; i++) {
         str= str + codigo[i]+ " ";
@@ -217,19 +217,18 @@ void game_player::add_spaces(string &str) {
     str = str + codigo[3];
 }
 
-// Função que verefica se o server e o player estão na mesma try
+// Função que verifica se o servidor e o jogador estão na mesma tentativa
 bool game_player::same_try(int server_try) const{
     return nT == server_try;
 }
 
-// Função que atualiza o código
+// Função que atualiza o código do jogo
 void game_player::update_codigo(const string &new_code){
     codigo = new_code;
 }
 
-// Função que termina o jogo do player
+// Função que termina o jogo do jogador e grava os dados no arquivo
 void game_player::finish(const string &term, time_t time) {
-    // cout<< "Jogador com PLID " << plid << " terminou o jogo." << endl;
     ativo = false;
     file->finish_game(time, term, to_string((NUM_TRIES - nT+1)*10));
     nT = 0;
@@ -239,7 +238,7 @@ void game_player::finish(const string &term, time_t time) {
 }
 
 
-//----------------------------------------------------------------------OUTRAS----------------------------------------------------------------
+//-------------------------------------------------------------------OUTRAS----------------------------------------------------------------
 
 // Função que cria ficheiros
 ofstream create_file(const string &directory, const string &filename){
@@ -250,7 +249,7 @@ ofstream create_file(const string &directory, const string &filename){
     return file;
 }
 
-// Função que coloca por extenso o código
+// Função que retorna por extenso o código de terminação
 string get_termination_type(const string &type){
     if (type == "W")
         return "Win";
@@ -302,7 +301,7 @@ bool valid_time(const string &str){
     }
 }
 
-// Função que gera o código de cores random
+// Função que gera um código de cores aleatório
 void generate_random_colors(char *result) {
     char colors[] = {'R', 'G', 'B', 'Y', 'O', 'P'};
     size_t num_available_colors = sizeof(colors) / sizeof(colors[0]);
@@ -356,7 +355,7 @@ int FindTopScores(list<string> *list) {
     return ifile;
 }
 
-// Função que encontra o ultimo jogo atravez do ficheiro
+// Função que encontra o último jogo por meio do arquivo
 int FindLastGame(string &PLID_str, char *fname){
     const char *PLID = PLID_str.c_str();
     struct dirent **filelist;
@@ -403,7 +402,7 @@ int FindLastGame(string &PLID_str, char *fname){
     return (found);
 }
 
-// Função que encontra uma jogada (para vererficação de duplicados)
+// Função que encontra uma jogada (para verificação de duplicados)
 int find_play(string &PLID, string &code) {
     char *file_name = (char *)malloc(50);
     if (FindLastGame(PLID, file_name) == 0) {
@@ -436,6 +435,8 @@ int find_play(string &PLID, string &code) {
     return 0;
 }
 
+
+// Função que formata a score board
 void format_scb(string &buffer)
 {
     buffer = "-------------------------------- TOP 10 SCORES --------------------------------\n";
@@ -453,6 +454,8 @@ void format_scb(string &buffer)
     }
 }
 
+
+// Função que compara códigos e retorna o número de pretos (nB) e brancos (nW)
 void match_code(const string &code1, const string &code2, int &nW, int &nB)
 {
     nW = 0;
@@ -477,6 +480,7 @@ void match_code(const string &code1, const string &code2, int &nW, int &nB)
     }
 }
 
+// Função que formata o tempo para arquivos
 string get_str_time(time_t time, int mode)
 {
     char buffer[20];
@@ -494,6 +498,7 @@ string get_str_time(time_t time, int mode)
     return string(buffer);
 }
 
+// Função que processa a jogada do jogador
 void process_player(game_player *player, string &code, int nT, string &send_buffer, time_t play_time)
 {
     
@@ -506,43 +511,39 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
         cerr << "Erro: plid está vazio!" << endl;
         return;
     }
+    // Se o jogador não está ativo, então não pode jogar
     else if (player->ativo) {
+        // Verifica o timer do jogo
         if (player->game_time_act(play_time) == false)
         {
-
-            // cout<< "Jogador com PLID " << player->plid << " não está ativo." << endl;
-            // cout<< "Tempo esgotado para o jogador." << endl;
             string code_final;
             player-> add_spaces(code_final);
             send_buffer = "RTR ETM " + code_final + "\n";
             player->finish("T", play_time);
             return;
         }
+        // verifica se o numero da jogada é valida 
         if (player->same_try(nT) || (player->same_try(nT - 1) && find_play(player->plid, code)))            {
-            // cout<< "Jogador com PLID: ";
             int nW = 0;
             int nB = 0;
+            //caso duplicado
             if (find_play(player->plid, code) && player->same_try(nT))
             {
-                // cout<< "Tentiva duplicada." << endl;
                 send_buffer = "RTR DUP\n";
                 return;
             }
             match_code(player->codigo, code, nW, nB);
-            // cout<< "nW: " << nW << " nB: " << nB << endl;
+            // caso fique sem tentativas
             if (nT == NUM_TRIES && nB != NUM_COLORS)  {
                 string code_final;
                 player-> add_spaces(code_final);
-                // cout<< "Número de tentativas esgotado." << endl;
                 send_buffer = "RTR ENT " + code_final + "\n";
                 player->finish("F", play_time);
                 return;
             }
+            // caso ganhe o jogo
             else if (nB == NUM_COLORS)
             {
-
-                // cout<< "Jogador com PLID " << player->plid << " acertou no código." << endl;
-                //player->next_try();
                 player->file->new_line(code, nB, nW, play_time);              
                 send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW)+ "\n";
                 player->finish("W", play_time);
@@ -556,15 +557,15 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
             }
             return;
         }
+        //numero invalido de tentativas
         else
         {
-            // cout<< "Número de tentativas inválido" << endl;
             send_buffer = "RTR INV\n";
             return;
         }
     }
+    //jogador existe no arquivo mas nao tem um jogo ativo
     else {
-        // printf("jogo nao encontrado");
         if (player->codigo.empty()) {
             send_buffer = "RTR NOK\n";
             return;
@@ -572,6 +573,7 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
     }
 }
 
+// Função que formata o arquivo de jogo para ser enviado ao jogador
 void format_str(string &scorefilename, string &buffer, string &code){
     buffer = "";
     ifstream file(scorefilename);
@@ -587,7 +589,6 @@ void format_str(string &scorefilename, string &buffer, string &code){
         if (lines.empty())
             return;
 
-        // Extract initial game information
         stringstream ss(lines[0]);
         string plid, mode, secret_code, timeout, init_date, init_time, init_epoch_str;
         ss >> plid >> mode >> secret_code >> timeout >> init_date >> init_time >> init_epoch_str;
@@ -622,9 +623,8 @@ void format_str(string &scorefilename, string &buffer, string &code){
             stringstream ss_filename(scorefilename);
             string part;
             while (ss_filename >> part) {
-                // The termination type is the last part of the filename before the extension
                 if (part.find(".txt") != string::npos) {
-                    termination_type = part[part.size() - 5]; // Extract the termination type (W, F, Q, T)
+                    termination_type = part[part.size() - 5]; // Extrai a terminacao (W, F, Q, T)
                 }
             }
             
@@ -637,14 +637,14 @@ void format_str(string &scorefilename, string &buffer, string &code){
                 buffer += "Trial: " + trial_code + ", nB: " + to_string(nb) + ", nW: " + to_string(nw) + " at " + to_string(trial_time) + "s\n";
             }
 
-            // Extract end date, end time, and duration from the last line
+            // Extrai a a data e hora de terminacao e a duraçãoo do jogo
             stringstream ss_end(lines.back());
             string end_date, end_time, duration_str;
             ss_end >> end_date >> end_time >> duration_str;
 
             buffer += "     Termination: " + get_termination_type(termination_type) + " at " + end_date + " " + end_time + ", Duration: " + duration_str + "s\n";
 
-            // Format the filename and save it in the GAMES/123456 directory
+            // formata o nome do ficheiro para o novo nome
             string new_filename = "SERVER/GAMES/"+ plid +"/" + end_date + " " + end_time + " " + termination_type + ".txt";
             ofstream new_file(new_filename);
             if (new_file.is_open())
@@ -657,8 +657,9 @@ void format_str(string &scorefilename, string &buffer, string &code){
 }
 
 
+// Função que valida os argumentos recebidos
 int validate_args(int argc, char *argv[], char *&gs_port, bool &verbose){
-    // Parse command-line arguments
+    
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-p") == 0 && i + 1 < argc)
             gs_port = argv[++i];
@@ -674,10 +675,9 @@ int validate_args(int argc, char *argv[], char *&gs_port, bool &verbose){
     return 0;
 }
 
+// Função que encontra um jogador na base de dados
 game_player *find_player(const string &plid) {
-    // Verifica se o vetor está vazio
     if (players.empty()) {
-        // cout<< "Player list is empty. Cannot find any player." << endl;
         return nullptr;
     }
 
@@ -686,7 +686,7 @@ game_player *find_player(const string &plid) {
     });
 
     if (it != players.end())
-        return &(*it); // Retorna o ponteiro para o jogador encontrado
+        return &(*it); 
 
-    return nullptr; // Retorna nullptr se não encontrar o jogador
+    return nullptr; 
 }

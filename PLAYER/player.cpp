@@ -21,7 +21,7 @@ using namespace std;
 int flag = 1;
 game_player curr_game= game_player("000000");
 
-// FUnção que trata da mensagem que o server mandou
+// Função que processa a mensagem recebida do servidor
 int case_server(const char *buffer_received, int code, string &sendmsg){
     string buffer(buffer_received); 
     string file_out;
@@ -39,7 +39,7 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
             cout << "Incorrect arguments given" << endl;
         }
     }
-    // Verefica o status do player 
+    // Verefica o status do jogador 
     else if (buffer.substr(0, 3) == "RSG") {
         if (buffer == "RSG OK\n") {
             std::cout << "Pode começar a jogar :)" << std::endl;
@@ -54,7 +54,7 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
         }
     }
 
-    // Verefica o player tem um jogo ativo pelo ficheiro
+    // Verifica se o jogador tem um jogo ativo por meio do arquivo
     else if (buffer.substr(0, 3) == "RST") {
         if (buffer.substr(0, 7) == "RST ACT") {
             get_file_msg(buffer, file_out);
@@ -80,7 +80,7 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
             cout << file_out << endl;
         }
     }
-    // Resposta ao quit 
+    // Resposta ao comando quit 
     else if (buffer.substr(0, 3) == "RQT") {
         if (buffer.substr(0, 6) == "RQT OK") {
             cout << "Jogo terminado com sucesso" << endl;
@@ -98,6 +98,8 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
         else if (buffer.substr(0, 7) == "RQT ERR")
             cout << "Erro ao terminar o jogo." << endl;
     }
+
+    // Resposta às tentativas
     else if (buffer.substr(0, 3) == "RTR") {
         if (buffer.substr(0, 6) == "RTR OK") {
             cout << "Tentativa numero " << curr_game.nT << endl;
@@ -142,10 +144,9 @@ int case_server(const char *buffer_received, int code, string &sendmsg){
     return 0;
 }
 
-// Função main do player
+// Função principal do player
 int main(int argc, char *argv[]){
     char *gs_ip = strdup("localhost");
-    //193.136.138.142
     char *gs_port = strdup("58081");
 
     if (!gs_ip || !gs_port) {
@@ -153,9 +154,10 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
+    // Processa os argumentos fornecidos pelo usuário
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-n") == 0 && i + 1 < argc) {
-            free(gs_ip); // Free previous value
+            free(gs_ip); 
             gs_ip = strdup(argv[++i]);
             if (!gs_ip) {
                 cerr << "Memory allocation failed" << endl;
@@ -163,7 +165,7 @@ int main(int argc, char *argv[]){
                 return 1;
             }
         } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
-            free(gs_port); // Free previous value
+            free(gs_port);
             gs_port = strdup(argv[++i]);
             if (!gs_port) {
                 cerr << "Memory allocation failed" << endl;
@@ -178,29 +180,31 @@ int main(int argc, char *argv[]){
         }
     }
 
-    cout << "Servidor: " << gs_ip << endl;
-    cout << "Porta: " << gs_port << endl;
     struct addrinfo *infoaddr = nullptr;
     struct addrinfo *infoaddr_tcp = nullptr;
-    char buffer[BUFFER_SIZE];
-    char buffer_tcp[TCP_BUFFER_SIZE];
-    string sendmsg;
-    int code;
+    char buffer[BUFFER_SIZE];         // Buffer para comunicação UDP
+    char buffer_tcp[TCP_BUFFER_SIZE]; // Buffer para comunicação TCP
+    string sendmsg;                   // Buffer para comunicação TCP
+    int code;                         // Código que representa o comando
     int n = 0;
 
-    // Inicializa o socket
+    // Inicializa o socket UDP
     int fd = init_socket_player(gs_ip, infoaddr, gs_port);
     if (fd < 0) {
         return 1;
     }
 
+    // Loop principal do jogo
     while (flag == 1) {
+
+        // Obtém a mensagem do terminal (entrada do usuário)
         if (get_msg(sendmsg) != 0){
             perror("Erro ao ler a mensagem");
             return -1;
         }
         cout << "\n" ;
 
+        // Processa o comando recebido do terminal
         if ((code = case_terminal(sendmsg)) == -1 || add_args(sendmsg, code, curr_game) == -1) {
             cout <<"\n";
             cout << "---------------------------------" << endl;
@@ -227,7 +231,7 @@ int main(int argc, char *argv[]){
                 close(fd);
                 return 1;
             }
-            // mensagem por tcp
+            // Envia a mensagem ao servidor via TCP
             if ((n = send_tcp_player(fd_tcp, csendmsg)) < 0)  {
                 printf("erro a enviar a mensagem");
                 freeaddrinfo(infoaddr);
@@ -235,8 +239,8 @@ int main(int argc, char *argv[]){
                 close(fd_tcp);
                 close(fd);
                 return 1;
-            }
-            // Recebe mensagem
+            }            
+            // Recebe a resposta do servidor via TCP
             n = receive_tcp_player(fd_tcp, buffer_tcp, TCP_BUFFER_SIZE);
             if (n < 0) {
                 printf("erro a receber a mensagem");
@@ -255,15 +259,15 @@ int main(int argc, char *argv[]){
             close(fd_tcp);
             freeaddrinfo(infoaddr_tcp);
         }
-        
+        // Caso o comando exija comunicação UDP
         else { 
-            // mensagem por udp
+            // Envia a mensagem ao servidor via UDP
             if (send_socket_udp_player(fd, csendmsg, infoaddr) < 0) {
                 freeaddrinfo(infoaddr);
                 close(fd);
                 return 1;
             }
-            // Recebe mensagem
+            // Recebe a resposta do servidor via UDP
             int n = receive_socket_udp_player(fd, buffer, BUFFER_SIZE);
             if (n < 0) {
                 freeaddrinfo(infoaddr);
@@ -274,7 +278,6 @@ int main(int argc, char *argv[]){
                 cout << "No message received." << endl;
             }
             else {
-                cout << "Mensagem recebida: '" << buffer <<"'" << endl;
                 case_server(buffer, code, sendmsg);
             }
         }
