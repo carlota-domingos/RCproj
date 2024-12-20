@@ -17,11 +17,10 @@ using namespace std;
 
 class game_file {
 public:
-    string plid;        //identificador do player
-    string path_file;   //
-    time_t time_init;   // Tempo de referência para calcular o tempo das jogadas
+    string plid;        // Identificador único do jogador.
+    string path_file;   // Caminho do arquivo associado ao jogo do jogador.
+    time_t time_init;   // Tempo de início do jogo usado como referência para calcular a duração das jogadas.
     string game_mode;   // Modo do jogo
-    int error = 0;      //
 
     game_file(const string &id, const string &mode, const string &code, const string &timeout, time_t time_i);
     void new_line(const string &code, int nb, int nw, time_t play_time);
@@ -34,14 +33,14 @@ public:
 
 class game_player {
 public:
-    string plid;              // identificador do player
-    int time;                 // duração do jogo dada pelo player
-    int nT;                   // Número de tentativas
-    string codigo = "";       // acts to know if a timeout or finished msg has been sent
-    bool ativo = false;       // indica se o jogador está ativo
-    int score;                //  
-    game_file *file;          //  
-    time_t tempo_inicio_jogo; //
+    string plid;              // Identificador único do jogador.
+    int time;                 // Tempo total do jogo definido pelo jogador.
+    int nT;                   // Número de tentativas feitas pelo jogador
+    string codigo = "";       // 
+    bool ativo = false;       // Indica se o jogador está ativo no jogo (true caso ativo)
+    int score;                // Pontuação atual do jogador.  
+    game_file *file;          // Ponteiro para o objeto game_file associado ao jogador (gerencia dados do jogo).  
+    time_t tempo_inicio_jogo; // Timestamp do início do jogo para o jogador.
 
     game_player(const string &id);
     void start_game(int tempo, string &cores, game_file *gfile, time_t tempo_inicio);
@@ -53,7 +52,7 @@ public:
     bool same_try(int server_try) const;
     void update_codigo(const string &new_code);
     void finish(const string &term, time_t time);
-    void display_info() const;
+    
 
 };
 
@@ -78,4 +77,4 @@ int validate_args(int argc, char *argv[], char *&gs_port, bool &verbose);
 game_player *find_player(const string &plid);
 
 
-#endif // LIB_H
+#endif 

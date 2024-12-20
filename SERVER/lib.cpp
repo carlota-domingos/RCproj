@@ -44,12 +44,12 @@ game_file::game_file(const string &id, const string &mode, const string &code, c
     int fd_game = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
     if (fd_game == -1) {
         perror("Erro ao abrir o ficheiro de jogo");
-        error = 1;
+        
     }
     string firstline = plid + " " + mode + " " + code + " " + timeout + " " + get_str_time(time_init, 0) + " " + to_string(time_init) + "\n";
     if (write(fd_game, firstline.c_str(), firstline.size()) == -1) {
         perror("Erro ao escrever no ficheiro de jogo");
-        error = 1;
+        
     }
     close(fd_game);
 }
@@ -63,7 +63,7 @@ void game_file::new_line(const string &code, int nb, int nw, time_t play_time) {
     if (write(fd_game, line.c_str(), line.size()) == -1)
     {
         perror("Erro ao escrever no ficheiro de jogo");
-        error = 1;
+        
     }
     close(fd_game);
 }
@@ -73,13 +73,13 @@ string game_file::get_code_file() {
     int fd_game = open(path_file.c_str(), O_RDONLY);
     if (fd_game == -1) {
         perror("Erro ao abrir o ficheiro de jogo");
-        error = 1;
+        
     }
     string code;
     char buffer[50];
     if (read(fd_game, buffer, 50) == -1) {
         perror("Erro ao ler o ficheiro de jogo");
-        error = 1;
+        
     }
     int i = 0;
     int count = 0;
@@ -101,7 +101,7 @@ int game_file::get_nT_file() {
     if (fd_game == -1) {
         // printf("get_nT_file\n");
         perror("Erro ao abrir o ficheiro de jogo");
-        error = 1;
+        
     }
     int nT = 0;
     char buffer[50];
@@ -137,13 +137,13 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
     //renames the file
     if (rename(path_file.c_str(), new_path.c_str()) == -1) {
         perror("Erro ao renomear o ficheiro de jogo");
-        error = 1;
+        
     }
     path_file = new_path;
     int fd_game = open(path_file.c_str(), O_WRONLY | O_APPEND);
     if (write(fd_game, last_line.c_str(), last_line.size()) == -1) {
         perror("Erro ao escrever no ficheiro de jogo");
-        error = 1;
+        
     }
     if (term == "W") {
         string score_fn = score + "_" + plid + "_" + get_str_time(finishtime, 1) + ".txt";
@@ -151,21 +151,21 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
         struct stat st;
         if (stat("SERVER/SCORES", &st) != 0) {
             perror("Directory SCORES does not exist");
-            error = 1;
+            
             return;
         }
 
         int score_fd = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (score_fd == -1) {
             perror("Error opening score file");
-            error = 1;
+            
             return;
         }
 
         string score_line = score + " " + plid + " " + get_code_file() + " " + to_string(get_nT_file()) + " " + game_mode + "\n";
         if (write(score_fd, score_line.c_str(), score_line.size()) == -1) {
             perror("Error writing to score file");
-            error = 1;
+            
             close(score_fd);
             return;
         }
@@ -231,20 +231,13 @@ void game_player::update_codigo(const string &new_code){
 void game_player::finish(const string &term, time_t time) {
     // cout<< "Jogador com PLID " << plid << " terminou o jogo." << endl;
     ativo = false;
-    file->finish_game(time, term, to_string(NUM_TRIES - nT));
+    file->finish_game(time, term, to_string((NUM_TRIES - nT+1)*10));
     nT = 0;
     codigo = "";
     time = 0;
     tempo_inicio_jogo = 0;
 }
 
-// Função que imprime informação
-void game_player::display_info() const {
-    // cout<< "Player ID: " << plid << "\n";
-    // cout<< "tempo " << time << "\n";
-    // cout<< "tentativas " << nT << "\n";
-    // cout<< "Code: " << codigo << "\n";
-}
 
 //----------------------------------------------------------------------OUTRAS----------------------------------------------------------------
 
@@ -379,7 +372,7 @@ int FindLastGame(string &PLID_str, char *fname){
         while (nentries--) {
             if (strcmp(filelist[nentries]->d_name, filename) == 0)
             {
-                sprintf(fname, "%s", filelist[nentries]->d_name);
+                sprintf(fname, "SERVER/%s", filelist[nentries]->d_name);
                 found = 1;
             }
             free(filelist[nentries]);

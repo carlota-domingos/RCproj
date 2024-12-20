@@ -40,7 +40,6 @@ int init_game(string &PLID, int time, time_t play_time){
         string colour_code_str(colour_code);
         game_file *file = new game_file(PLID, "P", colour_code_str, to_string(time), play_time);
         player->start_game(time, colour_code_str, file, play_time);
-        player->display_info();
         return 0;
     }
     // cout << "Entrou no caso START NEW GAME com PLID: " << PLID << " e tempo_max: " << time << endl;
