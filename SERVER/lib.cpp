@@ -38,7 +38,7 @@ game_file::game_file(const string &id, const string &mode, const string &code, c
         game_mode = "PLAY";
     else
         game_mode = "DEBUG";
-    string path = "GAME_" + plid + ".txt";
+    string path = "SERVER/GAME_" + plid + ".txt";
     path_file = path;
     time_init = time_i;
     int fd_game = open(path.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -132,7 +132,7 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
     time_t game_time = finishtime - time_init;
     string game_time_str = to_string(game_time);
     string last_line = get_str_time(finishtime, 0) + " " + game_time_str + "\n";
-    string new_path = "GAMES/" + plid + "/" + get_str_time(finishtime, 1) + "_" + term + ".txt";
+    string new_path = "SERVER/GAMES/" + plid + "/" + get_str_time(finishtime, 1) + "_" + term + ".txt";
     create_game_dir(plid);
     //renames the file
     if (rename(path_file.c_str(), new_path.c_str()) == -1) {
@@ -147,9 +147,9 @@ void game_file::finish_game(time_t finishtime, const string &term, const string 
     }
     if (term == "W") {
         string score_fn = score + "_" + plid + "_" + get_str_time(finishtime, 1) + ".txt";
-        string path = "SCORES/" + score_fn;
+        string path = "SERVER/SCORES/" + score_fn;
         struct stat st;
-        if (stat("SCORES", &st) != 0) {
+        if (stat("SERVER/SCORES", &st) != 0) {
             perror("Directory SCORES does not exist");
             error = 1;
             return;
@@ -272,18 +272,19 @@ string get_termination_type(const string &type){
 
 // Função que cria diretorias
 void create_directories(){
-    if (mkdir("SCORES", 0777) == -1) {
+
+    if (mkdir("SERVER/SCORES", 0777) == -1) {
         perror("Erro ao criar diretório SCORES");
     }
     // Criar o diretório show_trials
-    if (mkdir("GAMES", 0777) == -1) {
+    if (mkdir("SERVER/GAMES", 0777) == -1) {
         perror("Erro ao criar diretório GAMES");
     }
 }
 
 // Função que cria a diretoria Games do player
 void create_game_dir(const string &plid){
-    string path = "GAMES/" + plid;
+    string path = "SERVER/GAMES/" + plid;
     mkdir(path.c_str(), 0777);
 }
 
@@ -330,7 +331,7 @@ int FindTopScores(list<string> *list) {
     int nentries, ifile;
     char fname[512]; 
     FILE *fp;
-    nentries = scandir("SCORES/", &filelist, 0, alphasort);
+    nentries = scandir("SERVER/SCORES/", &filelist, 0, alphasort);
     ifile = 0;
     if (nentries < 0) {
         perror("Erro ao ler o diretório de scores");
@@ -339,7 +340,7 @@ int FindTopScores(list<string> *list) {
     else {
         while (nentries--) {
             if (filelist[nentries]->d_name[0] != '.') {
-                snprintf(fname, sizeof(fname), "SCORES/%s", filelist[nentries]->d_name);
+                snprintf(fname, sizeof(fname), "SERVER/SCORES/%s", filelist[nentries]->d_name);
                 fp = fopen(fname, "r");
                 if (fp != NULL) {
                     char mode[10];
@@ -371,7 +372,7 @@ int FindLastGame(string &PLID_str, char *fname){
     char dirname[50];
 
     sprintf(filename, "GAME_%s.txt", PLID);
-    nentries = scandir(".", &filelist, 0, alphasort);
+    nentries = scandir("SERVER", &filelist, 0, alphasort);
     found = 0;
 
     if (nentries > 0) {
@@ -388,7 +389,7 @@ int FindLastGame(string &PLID_str, char *fname){
         free(filelist);
     } 
     if (!found) {
-        sprintf(dirname, "GAMES/%s/", PLID);
+        sprintf(dirname, "SERVER/GAMES/%s/", PLID);
         nentries = scandir(dirname, &filelist, 0, alphasort);
         found = 0;
         if (nentries <= 0)
@@ -396,7 +397,7 @@ int FindLastGame(string &PLID_str, char *fname){
         else {
             while (nentries--) {
                 if (filelist[nentries]->d_name[0] != '.') {
-                    sprintf(fname, "GAMES/%s/%s", PLID, filelist[nentries]->d_name);
+                    sprintf(fname, "SERVER/GAMES/%s/%s", PLID, filelist[nentries]->d_name);
                     found = 1;
                 }
                 free(filelist[nentries]);
@@ -651,7 +652,7 @@ void format_str(string &scorefilename, string &buffer, string &code){
             buffer += "     Termination: " + get_termination_type(termination_type) + " at " + end_date + " " + end_time + ", Duration: " + duration_str + "s\n";
 
             // Format the filename and save it in the GAMES/123456 directory
-            string new_filename = "GAMES/"+ plid +"/" + end_date + " " + end_time + " " + termination_type + ".txt";
+            string new_filename = "SERVER/GAMES/"+ plid +"/" + end_date + " " + end_time + " " + termination_type + ".txt";
             ofstream new_file(new_filename);
             if (new_file.is_open())
             {

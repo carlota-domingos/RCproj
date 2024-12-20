@@ -15,8 +15,8 @@ PLAYER_SRC = $(PLAYER_DIR)/player.cpp $(PLAYER_DIR)/libPlayer.cpp $(UDPTCP_DIR)/
 SERVER_SRC = $(SERVER_DIR)/GS.cpp $(SERVER_DIR)/lib.cpp $(UDPTCP_DIR)/udpTcp.cpp
 
 # Nomes dos executáveis
-PLAYER_EXEC = $(PLAYER_DIR)/player
-SERVER_EXEC = $(SERVER_DIR)/server
+PLAYER_EXEC = player
+SERVER_EXEC = server
 
 # Regra padrão: compilar tudo
 all: $(PLAYER_EXEC) $(SERVER_EXEC)
@@ -29,19 +29,11 @@ $(PLAYER_EXEC): $(PLAYER_SRC)
 $(SERVER_EXEC): $(SERVER_SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Regra para executar o player dentro do diretório
-player: $(PLAYER_EXEC)
-	cd $(PLAYER_DIR) && ./player $(ARGS)
-
-# Regra para executar o servidor dentro do diretório
-server: $(SERVER_EXEC)
-	cd $(SERVER_DIR) && ./server $(ARGS)
-
 # Regra para limpar os arquivos compilados
 clean:
 	rm -f $(PLAYER_EXEC) $(SERVER_EXEC)
 	rm -f $(PLAYER_DIR)/*.o $(SERVER_DIR)/*.o $(UDPTCP_DIR)/*.o
-	rm -f $(PLAYER_DIR)/*.txt $(SERVER_DIR)/*.txt
+	rm -f $(PLAYER_DIR)/*.txt $(SERVER_DIR)/*.txt $(GAMES_DIR)/*.txt $(SCORES_DIR)/*.txt
 	rm -fr $(GAMES_DIR) $(SCORES_DIR)
 
 

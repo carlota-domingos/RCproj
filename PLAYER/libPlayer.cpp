@@ -78,10 +78,12 @@ int get_file_msg(string &msg, string &file_out) {
         if (count == 2) 
             break;
         count++;
+        //printf ("curr: %s\n", curr.c_str());
     }
 
     if (!curr.empty()) {
         try {
+            //printf ("curr: %s\n", curr.c_str());
             filename = curr;
             stream >> size;
             int num_chars = stoi(size);
@@ -101,7 +103,7 @@ int get_file_msg(string &msg, string &file_out) {
         return -1;
     }
 
-    ofstream file = create_file(".", filename);
+    ofstream file = create_file("PLAYER", filename);
     if (!file) 
         return -1;
 

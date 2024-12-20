@@ -89,7 +89,7 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
     if (buffer.compare("SSB\n") == 0) {
         struct dirent **filelist;
         int nentries;
-        nentries = scandir("SCORES/", &filelist, 0, alphasort);
+        nentries = scandir("SERVER/SCORES/", &filelist, 0, alphasort);
 
         bool is_empty = true;
         if (nentries < 0) {
@@ -410,67 +410,55 @@ int main(int argc, char *argv[]) {
             socklen_t addrlen_tcp = sizeof(addr_tcp);
             int client_fd = accept_connection_tcp_server(fd_tcp, &addr_tcp, &addrlen_tcp);
             if (client_fd >= 0) {
-            //     pid_t pid = fork();
-                
-                // if (pid < 0) { 
-                    // perror("Erro ao criar processo filho");
-                    // close(client_fd);
-                    // continue;
-                    
-                // } else if (pid == 0) { // Processo filho
-                    //close(fd_tcp); 
-                    char *buffer = (char *)malloc(BUFFER_SIZE);
-                    if (!buffer) {
-                        cerr << "Falha na alocação de memória no processo filho" << endl;
-                        close(client_fd);
-                        exit(1);
-                    }
-                    ssize_t n_tcp = read_message_tcp_server(client_fd, buffer, BUFFER_SIZE);
-                    if (n_tcp <= 0) {
-                        if (n_tcp == 0) {
-                            cout << "Cliente TCP desconectou." << endl;
-                        } else {
-                            perror("Erro ao receber mensagem TCP");
-                        }
-                        free(buffer);
-                        close(client_fd);
-                        exit(1);
-                    }
-                    cout << "Mensagem recebida: " << buffer << endl;
-                    string buffer_r(buffer, n_tcp);
-                    string send_string(BUFFER_SIZE_GS, '\0');
-                    time_t now = time(0);
-
-                    char ip_str[INET_ADDRSTRLEN];
-                    inet_ntop(AF_INET, &(addr_tcp.sin_addr), ip_str, INET_ADDRSTRLEN);
-                    
-                    if (case_player(buffer_r, send_string, now, args_verbose) != 0) {
-                        cerr << "Mensagem TCP inválida!" << endl;
-                        send_string = "ERR\n";
-                    } else if (verbose) {
-                        verbose_str = "[VERBOSE] "+ args_verbose;
-                        string ip_addr = string(ip_str);
-                        if (ip_addr == "127.0.0.1")
-                            verbose_str += " [Ip Address: localhost]";
-                        else
-                            verbose_str += " [Ip Address: " + string(ip_str)+ "]\n";
-                        cout << verbose_str << endl;
-                    }
-                    args_verbose.clear();
-                    verbose_str.clear();
-                    
-                    
-                    const char *buffer_send = send_string.c_str();
-                    printf("Mensagem enviada: '%s'\n", buffer_send);
-                    if (send_message_tcp_server(client_fd, buffer_send, BUFFER_SIZE_GS) < 0) {
-                        perror("Erro ao enviar mensagem TCP");
+                char *buffer = (char *)malloc(BUFFER_SIZE);
+                if (!buffer) {
+                    cerr << "Falha na alocação de memória no processo filho" << endl;
+                    close(client_fd);
+                    exit(1);
+                }
+                ssize_t n_tcp = read_message_tcp_server(client_fd, buffer, BUFFER_SIZE);
+                if (n_tcp <= 0) {
+                    if (n_tcp == 0) {
+                        cout << "Cliente TCP desconectou." << endl;
+                    } else {
+                        perror("Erro ao receber mensagem TCP");
                     }
                     free(buffer);
                     close(client_fd);
-                    send_string.clear();
-                // } else {
-                //     close(client_fd); 
-                // }
+                    exit(1);
+                }
+                cout << "Mensagem recebida: " << buffer << endl;
+                string buffer_r(buffer, n_tcp);
+                string send_string(BUFFER_SIZE_GS, '\0');
+                time_t now = time(0);
+
+                char ip_str[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, &(addr_tcp.sin_addr), ip_str, INET_ADDRSTRLEN);
+                
+                if (case_player(buffer_r, send_string, now, args_verbose) != 0) {
+                    cerr << "Mensagem TCP inválida!" << endl;
+                    send_string = "ERR\n";
+                } else if (verbose) {
+                    verbose_str = "[VERBOSE] "+ args_verbose;
+                    string ip_addr = string(ip_str);
+                    if (ip_addr == "127.0.0.1")
+                        verbose_str += " [Ip Address: localhost]";
+                    else
+                        verbose_str += " [Ip Address: " + string(ip_str)+ "]\n";
+                    cout << verbose_str << endl;
+                }
+                args_verbose.clear();
+                verbose_str.clear();
+                
+                
+                const char *buffer_send = send_string.c_str();
+                printf("Mensagem enviada: '%s'\n", buffer_send);
+                if (send_message_tcp_server(client_fd, buffer_send, BUFFER_SIZE_GS) < 0) {
+                    perror("Erro ao enviar mensagem TCP");
+                }
+                free(buffer);
+                close(client_fd);
+                send_string.clear();
             }
         }
         free(buffer);
