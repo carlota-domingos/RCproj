@@ -276,6 +276,7 @@ int main(int argc, char *argv[]){
                 cout << "No message received." << endl;
             }
             else {
+                cout << "Mensagem recebida: '" << buffer <<"'" << endl;
                 case_server(buffer, code, sendmsg);
             }
         }

@@ -401,7 +401,7 @@ int main(int argc, char *argv[]) {
                 send_string.clear();
                 break;
             }
-            printf("Mensagem enviada: %s\n", buffer_send);
+            printf("Mensagem enviada: '%s'\n", buffer_send);
             send_string.clear();
             continue;
         }
