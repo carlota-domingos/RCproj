@@ -49,10 +49,12 @@ public:
     bool game_time_act(time_t now);
     void reset(const string &id);
     void next_try();
+    void add_spaces(string &str);
     bool same_try(int server_try) const;
     void update_codigo(const string &new_code);
     void finish(const string &term, time_t time);
     void display_info() const;
+
 };
 
 extern vector<game_player> players;
@@ -74,5 +76,6 @@ string get_termination_type(const string &type);
 void format_str(string &scorefilename,  string &buffer, string &code);
 int validate_args(int argc, char *argv[], char *&gs_port, bool &verbose);
 game_player *find_player(const string &plid);
+
 
 #endif // LIB_H

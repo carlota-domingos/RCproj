@@ -186,7 +186,9 @@ int case_player(string &buffer, string &send_buffer, time_t play_time, string &a
             if (player) {
                 if (player->ativo) {
                     //cout << "Jogador com PLID " << PLID << " está ativo." << endl;
-                    send_buffer = "RQT OK " + player->codigo + "\n";
+                    string code_final = "";
+                    player->add_spaces(code_final);
+                    send_buffer = "RQT OK " + code_final + "\n";
                     player->finish("Q", play_time);
                     player->reset(PLID);
                 }

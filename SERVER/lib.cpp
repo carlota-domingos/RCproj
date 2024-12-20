@@ -210,6 +210,13 @@ void game_player::next_try() {
     nT++;
 }
 
+void game_player::add_spaces(string &str) {
+    for (int i = 0; i<3 ; i++) {
+        str= str + codigo[i]+ " ";
+    }
+    str = str + codigo[3];
+}
+
 // Função que verefica se o server e o player estão na mesma try
 bool game_player::same_try(int server_try) const{
     return nT == server_try;
@@ -511,7 +518,9 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
 
             // cout<< "Jogador com PLID " << player->plid << " não está ativo." << endl;
             // cout<< "Tempo esgotado para o jogador." << endl;
-            send_buffer = "RTR ETM " + player->codigo + "\n";
+            string code_final;
+            player-> add_spaces(code_final);
+            send_buffer = "RTR ETM " + code_final + "\n";
             player->finish("T", play_time);
             return;
         }
@@ -527,10 +536,11 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
             }
             match_code(player->codigo, code, nW, nB);
             // cout<< "nW: " << nW << " nB: " << nB << endl;
-            if (nT == NUM_TRIES && nB != NUM_COLORS)
-            {
+            if (nT == NUM_TRIES && nB != NUM_COLORS)  {
+                string code_final;
+                player-> add_spaces(code_final);
                 // cout<< "Número de tentativas esgotado." << endl;
-                send_buffer = "RTR ENT " + player->codigo + "\n";
+                send_buffer = "RTR ENT " + code + "\n";
                 player->finish("F", play_time);
                 return;
             }
@@ -540,7 +550,9 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
                 // cout<< "Jogador com PLID " << player->plid << " acertou no código." << endl;
                 player->next_try();
                 player->file->new_line(code, nB, nW, play_time);
-                send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW) + " " + player->codigo + "\n";
+                string code_final;
+                player-> add_spaces(code_final);                
+                send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW) + " " + code_final + "\n";
                 player->finish("W", play_time);
                 return;
             }
@@ -562,8 +574,6 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
     else {
         // printf("jogo nao encontrado");
         if (player->codigo.empty()) {
-            // printf("codigo vazio");
-            // cout<< "Jogador com PLID " << player->plid << " não está ativo." << endl;
             send_buffer = "RTR NOK\n";
             return;
         }
