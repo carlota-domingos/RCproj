@@ -548,7 +548,7 @@ void process_player(game_player *player, string &code, int nT, string &send_buff
             {
 
                 // cout<< "Jogador com PLID " << player->plid << " acertou no código." << endl;
-                player->next_try();
+                //player->next_try();
                 player->file->new_line(code, nB, nW, play_time);              
                 send_buffer = "RTR OK " + to_string(player->nT) + " " + to_string(nB) + " " + to_string(nW)+ "\n";
                 player->finish("W", play_time);

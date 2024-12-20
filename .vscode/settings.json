@@ -7,6 +7,10 @@
         "string_view": "cpp",
         "regex": "cpp",
         "iosfwd": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp"
     }
 }
